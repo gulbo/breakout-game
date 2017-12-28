@@ -708,6 +708,7 @@ void GLCD_DrawChar_U8 (unsigned int x, unsigned int y, unsigned int cw, unsigned
 }
 
 
+
 /*******************************************************************************
 * Draw character on given position                                             *
 *   Parameter:      x:        horizontal position                              *
@@ -854,8 +855,7 @@ void GLCD_Bargraph (unsigned int x, unsigned int y, unsigned int w, unsigned int
   }
   wr_dat_stop();
 }
-
-
+	
 /*******************************************************************************
 * Display graphical bitmap image at position x horizontally and y vertically   *
 * (This function is optimized for 16 bits per pixel format, it has to be       *
@@ -973,4 +973,33 @@ void GLCD_ScrollVertical (unsigned int dy) {
 #endif
 }
 
+void GLCD_DrawRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, short color){
+	int i,j;
+
+#if (HORIZONTAL == 1)
+  x = WIDTH-x-w;
+  GLCD_SetWindow(y, x, h, w);
+#else
+  GLCD_SetWindow(x, y, w, h);
+#endif
+
+  LCD_CS(0)
+  wr_cmd(0x22);
+  wr_dat_start();
+  for (i = 0; i < h; i++) {
+#if (HORIZONTAL == 1)
+    for (j = w-1; j >= 0; j--) {
+#else
+    for (j = 0; j <= w-1; j++) {
+#endif
+      wr_dat_only(color);
+    }
+  }
+  wr_dat_stop();
+}
+	
+void GLCD_RowsInitalization(void){
+	
+	
+}
 /******************************************************************************/

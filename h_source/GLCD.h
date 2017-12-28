@@ -65,4 +65,8 @@ extern void GLCD_Bitmap         (unsigned int x, unsigned int y, unsigned int w,
 extern void GLCD_Bmp            (unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned char *bmp);
 extern void GLCD_ScrollVertical (unsigned int dy);
 
+
+extern void GLCD_DrawRect				(unsigned int x, unsigned int y, unsigned int w, unsigned int h, short color);
+extern void GLCD_RowsInitialization(void);
+
 #endif /* _GLCD_H */
