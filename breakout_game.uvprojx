@@ -449,9 +449,14 @@
           </GroupOption>
           <Files>
             <File>
-              <FileName>main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\c_source\main.c</FilePath>
+              <FileName>main.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\c_source\main.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>game_elements.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>.\c_source\game_elements.cpp</FilePath>
             </File>
           </Files>
         </Group>

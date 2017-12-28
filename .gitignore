@@ -1,0 +1,10 @@
+# ignore these files or folders
+
+#build files
+DebugConfig
+Objects
+Listings
+
+#project files
+breakout_game.uvguix.simon
+breakout_game.uvguix.Andrea

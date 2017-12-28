@@ -11,6 +11,10 @@
 #ifndef _GLCD_H
 #define _GLCD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 /*------------------------------------------------------------------------------
   Color coding
   GLCD is coded:   15..11 red, 10..5 green, 4..0 blue  (unsigned short)  GLCD_R5, GLCD_G6, GLCD_B5   
@@ -50,6 +54,7 @@
 #define Line8           ( 8*24)
 #define Line9           ( 9*24)
 
+extern void delay 							(int cnt) ;
 extern void GLCD_Init           (void);
 extern void GLCD_WindowMax      (void);
 extern void GLCD_PutPixel       (unsigned int x, unsigned int y);
@@ -67,6 +72,9 @@ extern void GLCD_ScrollVertical (unsigned int dy);
 
 
 extern void GLCD_DrawRect				(unsigned int x, unsigned int y, unsigned int w, unsigned int h, short color);
-extern void GLCD_RowsInitialization(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _GLCD_H */

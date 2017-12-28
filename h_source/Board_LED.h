@@ -36,6 +36,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
   \fn          int32_t LED_Initialize (void)
   \brief       Initialize I/O interface for LEDs
@@ -86,5 +90,9 @@ extern int32_t  LED_On           (uint32_t num);
 extern int32_t  LED_Off          (uint32_t num);
 extern int32_t  LED_SetOut       (uint32_t val);
 extern uint32_t LED_GetCount     (void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BOARD_LED_H */

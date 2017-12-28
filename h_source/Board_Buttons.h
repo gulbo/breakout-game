@@ -36,6 +36,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
   \fn          int32_t Buttons_Initialize (void)
   \brief       Initialize buttons
@@ -66,4 +70,8 @@ extern int32_t  Buttons_Uninitialize (void);
 extern uint32_t Button_GetState     (int);
 extern uint32_t Buttons_GetCount     (void);
 
+#ifdef __cplusplus
+}
+#endif
+		
 #endif /* __BOARD_BUTTONS_H */
