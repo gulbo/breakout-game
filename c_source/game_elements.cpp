@@ -20,54 +20,7 @@
 
 #define BACKGROUND_COLOUR Black
 
-struct Brick{
-	uint16_t x;
-	uint16_t y;
-	uint32_t colour;
-	bool hit;
-	//bool drawn; MAYBE
-	
-	//constructor
-	Brick(uint16_t x, int16_t y){
-		this->x = x;
-		this->y = y;
-		switch(y){
-			case 270:
-				this->colour = BRICK_COLOUR_1;
-				break;
-			case 260:
-				this->colour = BRICK_COLOUR_2;
-				break;
-			case 250:
-				this->colour = BRICK_COLOUR_3;
-				break;
-			case 240:
-				this->colour = BRICK_COLOUR_4;
-				break;
-			case 230:
-				this->colour = BRICK_COLOUR_5;
-				break;
-			case 220:
-				this->colour = BRICK_COLOUR_6;
-				break;
-			case 210:
-				this->colour = BRICK_COLOUR_7;
-				break;		
-		}
-		hit = false;
-	}
-	
-	//has been hit
-	void been_hit(){
-		hit = true;
-		colour = BACKGROUND_COLOUR;
-	}
-	
-	void draw(){
-		GLCD_DrawRect(y,x,BRICK_WIDTH,BRICK_LENGTH,colour);
-	}
-	
-};
+
 
 struct Paddle{
 	uint16_t x;
@@ -107,15 +60,15 @@ struct Paddle{
 	
 
 struct Ball{
-	uint16_t x;
-	uint16_t y;
+	int16_t x;
+	int16_t y;
 	int32_t speed_x;
 	int32_t speed_y;
 	
 	//constructor
-	Ball(uint16_t x, uint16_t y){
-		this->x=x;
-		this->y=y;
+	Ball(int16_t x, int16_t y){
+		this->x = x;
+		this->y = y;
 	}
 	
 	void draw(){
@@ -154,6 +107,98 @@ struct Ball{
 	}
 	
 	private:
-	uint16_t old_x;
-	uint16_t old_y;
+	int16_t old_x;
+	int16_t old_y;
+};
+
+struct Brick{
+	uint16_t x;
+	uint16_t y;
+	uint32_t colour;
+	bool hit;
+	bool drawn;
+	
+	//constructor
+	Brick(uint16_t x, int16_t y){
+		this->x = x;
+		this->y = y;
+		switch(y){
+			case 270:
+				this->colour = BRICK_COLOUR_1;
+				break;
+			case 260:
+				this->colour = BRICK_COLOUR_2;
+				break;
+			case 250:
+				this->colour = BRICK_COLOUR_3;
+				break;
+			case 240:
+				this->colour = BRICK_COLOUR_4;
+				break;
+			case 230:
+				this->colour = BRICK_COLOUR_5;
+				break;
+			case 220:
+				this->colour = BRICK_COLOUR_6;
+				break;
+			case 210:
+				this->colour = BRICK_COLOUR_7;
+				break;		
+		}
+		hit = false;
+		drawn = false;
+	}
+	
+	//check if it has been hit, in case change the ball direction
+	bool check_collision(Ball ball){
+		int16_t ball_top = ball.y + BALL_RADIUS;
+		int16_t ball_bottom = ball.y - BALL_RADIUS;
+		int16_t ball_right = ball.x + BALL_RADIUS;
+		int16_t ball_left = ball.x - BALL_RADIUS;
+
+		if (is_inside(x,ball_top)){
+			// the ball is coming from the TOP
+			hit = true;
+			drawn = false;
+			ball.speed_y = -ball.speed_y;
+		}
+		else if (is_inside(x,ball_bottom)){
+			// the ball is coming from the BOTTOM
+			hit = true;
+			drawn = false;
+			ball.speed_y = -ball.speed_y;
+		}
+		else if (is_inside(ball_left,y)){
+			// the ball is coming from LEFT
+			hit = true;
+			drawn = false;
+			ball.speed_x = -ball.speed_x;
+		}
+		else if (is_inside(ball_right,y)){
+			// the ball is coming from the RIGHT
+			hit = true;
+			drawn = false;
+			ball.speed_x = -ball.speed_x;
+		}
+		return hit;
+	}
+	
+	void draw(){
+		if (!drawn){
+			if (hit)
+				GLCD_DrawRect(y,x,BRICK_WIDTH,BRICK_LENGTH,BACKGROUND_COLOUR);
+			else
+				GLCD_DrawRect(y,x,BRICK_WIDTH,BRICK_LENGTH,colour);
+			drawn = true;
+		}
+	}
+	
+	private:
+	bool is_inside(int16_t tx, int16_t ty){
+		if (tx < x || tx > x+BRICK_LENGTH)
+			return false;
+		if (ty < y || ty > y+BRICK_WIDTH)
+			return false;
+		return true;
+	}
 };
