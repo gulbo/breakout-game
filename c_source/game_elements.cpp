@@ -31,7 +31,29 @@ struct Brick{
 	Brick(uint16_t x, int16_t y){
 		this->x = x;
 		this->y = y;
-		//colour =  TODO calculate the right color using y
+		switch(y){
+			case 270:
+				this->colour = BRICK_COLOUR_1;
+				break;
+			case 260:
+				this->colour = BRICK_COLOUR_2;
+				break;
+			case 250:
+				this->colour = BRICK_COLOUR_3;
+				break;
+			case 240:
+				this->colour = BRICK_COLOUR_4;
+				break;
+			case 230:
+				this->colour = BRICK_COLOUR_5;
+				break;
+			case 220:
+				this->colour = BRICK_COLOUR_6;
+				break;
+			case 210:
+				this->colour = BRICK_COLOUR_7;
+				break;		
+		}
 		hit = false;
 	}
 	
@@ -91,8 +113,9 @@ struct Ball{
 	int32_t speed_y;
 	
 	//constructor
-	Ball(){
-		//TODO
+	Ball(uint16_t x, uint16_t y){
+		this->x=x;
+		this->y=y;
 	}
 	
 	void draw(){
