@@ -54,6 +54,13 @@ extern "C" {
 #define Line8           ( 8*24)
 #define Line9           ( 9*24)
 
+/*---------------------- Graphic LCD size definitions ------------------------*/
+
+#define SCREEN_WIDTH       320                 /* Screen Width (in pixels)           */
+#define SCREEN_HEIGHT      240                 /* Screen Hight (in pixels)           */
+#define BPP         16                  /* Bits per pixel                     */
+#define BYPP        ((BPP+7)/8)         /* Bytes per pixel                    */
+
 extern void delay 							(int cnt) ;
 extern void GLCD_Init           (void);
 extern void GLCD_WindowMax      (void);

@@ -51,13 +51,6 @@
    increased by factor 2^N by this constant                                   */
 #define DELAY_2N    18
 
-/*---------------------- Graphic LCD size definitions ------------------------*/
-
-#define WIDTH       320                 /* Screen Width (in pixels)           */
-#define HEIGHT      240                 /* Screen Hight (in pixels)           */
-#define BPP         16                  /* Bits per pixel                     */
-#define BYPP        ((BPP+7)/8)         /* Bytes per pixel                    */
-
 /*--------------- Graphic LCD interface hardware definitions -----------------*/
 
 /* Pin EN setting to 0 or 1                                                   */
@@ -449,9 +442,9 @@ void GLCD_Init (void) {
 	  
 	/* Set GRAM area -----------------------------------------------------------*/
 	wr_reg(0x50, 0x0000);                 /* Horizontal GRAM Start Address      */
-	wr_reg(0x51, (HEIGHT-1));             /* Horizontal GRAM End   Address      */
+	wr_reg(0x51, (SCREEN_HEIGHT-1));             /* Horizontal GRAM End   Address      */
 	wr_reg(0x52, 0x0000);                 /* Vertical   GRAM Start Address      */
-	wr_reg(0x53, (WIDTH-1));              /* Vertical   GRAM End   Address      */
+	wr_reg(0x53, (SCREEN_WIDTH-1));              /* Vertical   GRAM End   Address      */
 	wr_reg(0x60, 0x2700);                 /* Gate Scan Line                     */
 	wr_reg(0x61, 0x0001);                 /* NDL,VLE, REV                       */
 	wr_reg(0x6A, 0x0000);                 /* Set scrolling line                 */
@@ -570,9 +563,9 @@ void GLCD_SetWindow (unsigned int x, unsigned int y, unsigned int w, unsigned in
 void GLCD_WindowMax (void) {
  
 #if (HORIZONTAL == 1)
-  GLCD_SetWindow (0, 0, HEIGHT, WIDTH);
+  GLCD_SetWindow (0, 0, SCREEN_HEIGHT, SCREEN_WIDTH);
 #else
-  GLCD_SetWindow (0, 0, WIDTH, HEIGHT);
+  GLCD_SetWindow (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 #endif
 }
 
@@ -590,7 +583,7 @@ void GLCD_PutPixel (unsigned int x, unsigned int y) {
   {
 #if (HORIZONTAL == 1)
   	wr_reg(0x4e, y);
-  	wr_reg(0x4f, WIDTH-1-x);
+  	wr_reg(0x4f, SCREEN_WIDTH-1-x);
 #else
   	wr_reg(0x4e, x);
   	wr_reg(0x4f, y);
@@ -600,7 +593,7 @@ void GLCD_PutPixel (unsigned int x, unsigned int y) {
   {	 
 #if (HORIZONTAL == 1)
   	wr_reg(0x20, y);
-  	wr_reg(0x21, WIDTH-1-x);
+  	wr_reg(0x21, SCREEN_WIDTH-1-x);
 #else
   	wr_reg(0x20, x);
   	wr_reg(0x21, y);
@@ -661,7 +654,7 @@ void GLCD_Clear (unsigned short color) {
   LCD_CS(0)
   wr_cmd(0x22);
   wr_dat_start();
-  for(i = 0; i < (WIDTH*HEIGHT); i++)
+  for(i = 0; i < (SCREEN_WIDTH*SCREEN_HEIGHT); i++)
     wr_dat_only(color);
   wr_dat_stop();
 }
@@ -681,7 +674,7 @@ void GLCD_DrawChar_U8 (unsigned int x, unsigned int y, unsigned int cw, unsigned
   int idx = 0, i, j;
 
 #if (HORIZONTAL == 1)
-  x = WIDTH-x-cw;
+  x = SCREEN_WIDTH-x-cw;
   GLCD_SetWindow(y, x, ch, cw);
 #else
   GLCD_SetWindow(x, y, cw, ch);
@@ -723,7 +716,7 @@ void GLCD_DrawChar_U16 (unsigned int x, unsigned int y, unsigned int cw, unsigne
   int idx = 0, i, j;
 
 #if (HORIZONTAL == 1)
-  x = WIDTH-x-cw;
+  x = SCREEN_WIDTH-x-cw;
   GLCD_SetWindow(y, x, ch, cw);
 #else
   GLCD_SetWindow(x, y, cw, ch);
@@ -804,12 +797,12 @@ void GLCD_ClearLn (unsigned int ln, unsigned char fi) {
   GLCD_WindowMax();
   switch (fi) {
     case 0:  /* Font 6 x 8 */
-      for (i = 0; i < (WIDTH+5)/6; i++)
+      for (i = 0; i < (SCREEN_WIDTH+5)/6; i++)
         buf[i] = ' ';
       buf[i+1] = 0;
       break;
     case 1:  /* Font 16 x 24 */
-      for (i = 0; i < (WIDTH+15)/16; i++)
+      for (i = 0; i < (SCREEN_WIDTH+15)/16; i++)
         buf[i] = ' ';
       buf[i+1] = 0;
       break;
@@ -831,7 +824,7 @@ void GLCD_Bargraph (unsigned int x, unsigned int y, unsigned int w, unsigned int
 
   val = (val * w) >> 10;                /* Scale value                        */
 #if (HORIZONTAL == 1)
-  x = WIDTH-x-w;
+  x = SCREEN_WIDTH-x-w;
   GLCD_SetWindow(y, x, h, w);
 #else
   GLCD_SetWindow(x, y, w, h);
@@ -873,7 +866,7 @@ void GLCD_Bitmap (unsigned int x, unsigned int y, unsigned int w, unsigned int h
   unsigned short *bitmap_ptr = (unsigned short *)bitmap;
 
 #if (HORIZONTAL == 1)
-  x = WIDTH-x-w;
+  x = SCREEN_WIDTH-x-w;
   GLCD_SetWindow(y, x, h, w);
 #else
   GLCD_SetWindow(x, y, w, h);
@@ -916,7 +909,7 @@ void GLCD_Bmp (unsigned int x, unsigned int y, unsigned int w, unsigned int h, u
   unsigned short *bitmap_ptr = (unsigned short *)bmp;
 
 #if (HORIZONTAL == 1)
-  x = WIDTH-x-w;
+  x = SCREEN_WIDTH-x-w;
   GLCD_SetWindow(y, x, h, w);
 #else
   GLCD_SetWindow(x, y, w, h);
@@ -956,8 +949,8 @@ void GLCD_ScrollVertical (unsigned int dy) {
   static unsigned int y = 0;
 
   y = y + dy;
-  while (y >= HEIGHT) 
-    y -= HEIGHT;
+  while (y >= SCREEN_HEIGHT) 
+    y -= SCREEN_HEIGHT;
 
   if(driverCode==0x8989)
   {
@@ -977,7 +970,7 @@ void GLCD_DrawRect(unsigned int x, unsigned int y, unsigned int w, unsigned int 
 	int i,j;
 
 #if (HORIZONTAL == 1)
-  x = WIDTH-x-w;
+  x = SCREEN_WIDTH-x-w;
   GLCD_SetWindow(y, x, h, w);
 #else
   GLCD_SetWindow(x, y, w, h);

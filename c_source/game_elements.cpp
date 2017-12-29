@@ -87,6 +87,8 @@ struct Paddle{
 struct Ball{
 	uint16_t x;
 	uint16_t y;
+	int32_t speed_x;
+	int32_t speed_y;
 	
 	//constructor
 	Ball(){
@@ -98,11 +100,34 @@ struct Ball{
 		GLCD_DrawRect(y,x,BALL_RADIUS,BALL_RADIUS,BALL_COLOUR);
 	}
 	
+	//uses speed parameters to move the ball inside the screen
+	//bounces when hits a border
 	void move(){
 		old_x = x;
 		old_y = y;
-		//TODO .....
+		x = x + speed_x;
+		y = y + speed_y;
 		
+		// by now we assume that we have only 45 deg angles
+		//check x axis
+		if (x > SCREEN_WIDTH){
+			x = SCREEN_WIDTH - BALL_RADIUS;
+			speed_x = -speed_x;
+		}
+		else if (x < 0){
+			x = 0;
+			speed_x = -speed_x;
+		}
+		
+		//check y axis
+		if (y > SCREEN_HEIGHT){
+			y = SCREEN_HEIGHT - BALL_RADIUS;
+			speed_y = -speed_y;
+		}
+		else if (y < 0){
+			y = 0;
+			speed_y = -speed_y;
+		}
 	}
 	
 	private:
