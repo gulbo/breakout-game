@@ -16,7 +16,7 @@
 #define PADDLE_COLOUR White
 
 #define BALL_COLOUR Magenta
-#define BALL_RADIUS 6
+#define BALL_DIAMETER 6
 
 #define BACKGROUND_COLOUR Black
 
@@ -25,7 +25,6 @@ struct Brick{
 	uint16_t y;
 	uint32_t colour;
 	bool hit;
-	//bool drawn; MAYBE
 	
 	//constructor
 	Brick(uint16_t x, int16_t y){
@@ -107,20 +106,22 @@ struct Paddle{
 	
 
 struct Ball{
-	uint16_t x;
-	uint16_t y;
+	int16_t x;
+	int16_t y;
 	int32_t speed_x;
 	int32_t speed_y;
 	
 	//constructor
-	Ball(uint16_t x, uint16_t y){
+	Ball(int16_t x, int16_t y){
 		this->x=x;
 		this->y=y;
+		speed_x=1;
+		speed_y=1;
 	}
 	
 	void draw(){
-		GLCD_DrawRect(old_y,old_x,BALL_RADIUS,BALL_RADIUS,BACKGROUND_COLOUR);
-		GLCD_DrawRect(y,x,BALL_RADIUS,BALL_RADIUS,BALL_COLOUR);
+		GLCD_DrawRect(y+1,x,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
+		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);
 	}
 	
 	//uses speed parameters to move the ball inside the screen
@@ -128,13 +129,14 @@ struct Ball{
 	void move(){
 		old_x = x;
 		old_y = y;
-		x = x + speed_x;
-		y = y + speed_y;
+		x += speed_x;
+		y += speed_y;
+		
 		
 		// by now we assume that we have only 45 deg angles
 		//check x axis
-		if (x > SCREEN_WIDTH){
-			x = SCREEN_WIDTH - BALL_RADIUS;
+		if (x+BALL_DIAMETER == SCREEN_HEIGHT){	
+			x = SCREEN_HEIGHT - BALL_DIAMETER;			
 			speed_x = -speed_x;
 		}
 		else if (x < 0){
@@ -143,8 +145,8 @@ struct Ball{
 		}
 		
 		//check y axis
-		if (y > SCREEN_HEIGHT){
-			y = SCREEN_HEIGHT - BALL_RADIUS;
+		if (y+BALL_DIAMETER == SCREEN_WIDTH){
+			y = SCREEN_WIDTH - BALL_DIAMETER;
 			speed_y = -speed_y;
 		}
 		else if (y < 0){
@@ -154,6 +156,6 @@ struct Ball{
 	}
 	
 	private:
-	uint16_t old_x;
-	uint16_t old_y;
+	int16_t old_x;
+	int16_t old_y;
 };
