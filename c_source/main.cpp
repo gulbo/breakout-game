@@ -49,11 +49,6 @@ void GameInitialization(unsigned int difficulty){
 		ball.y--;
 		delay(1);
 	}
-	while(1){
-		ball.move();
-		ball.draw();
-		delay(2);
-	}
 }
 
 
