@@ -29,23 +29,26 @@ struct Paddle{
 	//constructor
 	Paddle(uint8_t diff){
 		switch(diff){
-			case 1: //medium
+			case 1: //easy level
+				length = 60;
+				x = 90;
+				break;
+			case 2: //medium
 				length = 40;
 				x = 100;
 				break;
-			case 2: //hard
+			case 3: //hard
 				length = 20;
 				x = 110;
-				break;
-			default: //easy level
-				length = 60;
-				x = 90;
 				break;
 		}
 	}
 	
-	
-	
+	void draw(){
+		GLCD_DrawRect(PADDLE_Y,old_x,PADDLE_WIDTH,length,BACKGROUND_COLOUR);
+		GLCD_DrawRect(PADDLE_Y,x,PADDLE_WIDTH,length,PADDLE_COLOUR); 
+	}
+	/////////////////////////////NEW//////////////////////////////////
 	void move(bool direction_left, bool direction_right){
 		if(direction_left==1&&direction_right==0){							//means right click
 			if(x==0);																							//do nothing instead of moving the paddle
@@ -56,7 +59,7 @@ struct Paddle{
 			}
 		}
 		else if(direction_left==0&&direction_right==1){				//means left click
-			if(x+length==SCREEN_HEIGHT);									//do nothing instead of moving the paddle
+			if(x+length==SCREEN_HEIGHT);												//do nothing instead of moving the paddle
 			else{
 				old_x = x;
 				x+=1;
@@ -68,10 +71,6 @@ struct Paddle{
 	
 	private:
 	uint16_t old_x;
-	void draw(){
-		GLCD_DrawRect(PADDLE_Y,old_x,PADDLE_WIDTH,length,BACKGROUND_COLOUR);
-		GLCD_DrawRect(PADDLE_Y,x,PADDLE_WIDTH,length,PADDLE_COLOUR); //TODO INVERT X AND Y
-	}
 };
 	
 
@@ -82,24 +81,25 @@ struct Ball{
 	int16_t old_y;
 	int32_t speed_x;
 	int32_t speed_y;
-	
+	bool end;
 	//constructor
 	Ball(int16_t x, int16_t y){
 		this->x = x;
 		this->y = y;
 		speed_x = 1;
 		speed_y = 1;
+		end = false;
 	}
 	
 	void draw(){
-		
 		GLCD_DrawRect(old_y,old_x,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
 		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);
 	}
 	
+	/////////////////////////////MODIFIED EXPRESSIONS TO MAKE IT WORK//////////////////////////////////
 	//uses speed parameters to move the ball inside the screen
 	//bounces when hits a border
-	void move(){
+	void move(Paddle p){
 		old_x = x;
 		old_y = y;
 		x += speed_x;
@@ -112,7 +112,7 @@ struct Ball{
 			x = SCREEN_HEIGHT - BALL_DIAMETER;
 			speed_x = -speed_x;
 		}
-		else if (x < 0){
+		else if (x==0){
 			x = 0;
 			speed_x = -speed_x;
 		}
@@ -122,9 +122,12 @@ struct Ball{
 			y = SCREEN_WIDTH - BALL_DIAMETER;
 			speed_y = -speed_y;
 		}
-		else if (y < 0){
-			y = 0;
+		else if (y==PADDLE_WIDTH+PADDLE_Y&&(x>p.x&&x<(p.x+p.length))){
+			y = PADDLE_WIDTH+PADDLE_Y;
 			speed_y = -speed_y;
+		}
+		else if (y==0){
+			end = true;
 		}
 	}
 	
@@ -168,6 +171,7 @@ struct Brick{
 		drawn = false;
 	}
 	
+	/////////////////////////////MODIFIED EXPRESSIONS TO MAKE IT WORK//////////////////////////////////
 	//check if it is hit, in case change the ball direction
 	bool check_collision(Ball ball){
 		int16_t ball_top = ball.y + BALL_DIAMETER;

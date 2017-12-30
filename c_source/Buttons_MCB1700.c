@@ -105,7 +105,7 @@ uint32_t Button_GetState (int n) {		//n must be included between 0 and 2, indica
 	uint32_t val;
   val = 0;
   if (!(GPIO_PinRead (BUTTON_PIN[n].Portnum, BUTTON_PIN[n].Pinnum))) 
-		val =1;
+		val = 1;
 
   return val;
 }
