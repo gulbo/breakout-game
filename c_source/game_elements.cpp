@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "GLCD.h"
+#include "LPC17xx.h"
 
 #define BRICK_LENGTH 20
 #define BRICK_WIDTH 8
@@ -72,66 +73,6 @@ struct Paddle{
 	private:
 	uint16_t old_x;
 };
-	
-
-struct Ball{
-	int16_t x;
-	int16_t y;
-	int16_t old_x;
-	int16_t old_y;
-	int32_t speed_x;
-	int32_t speed_y;
-	bool end;
-	//constructor
-	Ball(int16_t x, int16_t y){
-		this->x = x;
-		this->y = y;
-		speed_x = 1;
-		speed_y = 1;
-		end = false;
-	}
-	
-	void draw(){
-		GLCD_DrawRect(old_y,old_x,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
-		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);
-	}
-	
-	/////////////////////////////MODIFIED EXPRESSIONS TO MAKE IT WORK//////////////////////////////////
-	//uses speed parameters to move the ball inside the screen
-	//bounces when hits a border
-	void move(Paddle p){
-		old_x = x;
-		old_y = y;
-		x += speed_x;
-		y += speed_y;
-		
-		
-		// by now we assume that we have only 45 deg angles
-		//check x axis
-		if (x+BALL_DIAMETER==SCREEN_HEIGHT){
-			x = SCREEN_HEIGHT - BALL_DIAMETER;
-			speed_x = -speed_x;
-		}
-		else if (x==0){
-			x = 0;
-			speed_x = -speed_x;
-		}
-		
-		//check y axis
-		if (y+BALL_DIAMETER==SCREEN_WIDTH){
-			y = SCREEN_WIDTH - BALL_DIAMETER;
-			speed_y = -speed_y;
-		}
-		else if (y==PADDLE_WIDTH+PADDLE_Y&&(x>p.x&&x<(p.x+p.length))){
-			y = PADDLE_WIDTH+PADDLE_Y;
-			speed_y = -speed_y;
-		}
-		else if (y==0){
-			end = true;
-		}
-	}
-	
-};
 
 struct Brick{
 	uint16_t x;
@@ -171,40 +112,41 @@ struct Brick{
 		drawn = false;
 	}
 	
-	/////////////////////////////MODIFIED EXPRESSIONS TO MAKE IT WORK//////////////////////////////////
+	/////////////////////////////MMOVED INTO BALL STRUCT SINCE IT DID NOT CONSIDER BALL PARAMETER//////////////////////////////////
 	//check if it is hit, in case change the ball direction
-	bool check_collision(Ball ball){
+	/*void check_collision(Ball ball){
 		int16_t ball_top = ball.y + BALL_DIAMETER;
 		int16_t ball_bottom = ball.y;													//without ball.y-BALL_RADIUS since the reference is already the left-bottom angle
 		int16_t ball_right = ball.x + BALL_DIAMETER;
 		int16_t ball_left = ball.x;														//as above
 
-		if (is_inside(x,ball_top)){
-			// the ball is coming from the TOP
-			hit = true;
-			drawn = false;
-			ball.speed_y = -ball.speed_y;
-		}
-		else if (is_inside(x,ball_bottom)){
+		if (ball_left>=x&&ball_right<=x+BRICK_LENGTH&&ball_top==y){
 			// the ball is coming from the BOTTOM
 			hit = true;
 			drawn = false;
 			ball.speed_y = -ball.speed_y;
 		}
-		else if (is_inside(ball_left,y)){
+		else if (ball_left>=x&&ball_right<=x+BRICK_LENGTH&&ball_bottom==y+BRICK_WIDTH){
+			// the ball is coming from the TOP
+			hit = true;
+			drawn = false;
+			ball.speed_y = -ball.speed_y;
+		}
+		else if (ball_top<=y+BRICK_WIDTH&&ball_bottom>=y&&ball_right==x){
 			// the ball is coming from LEFT
 			hit = true;
 			drawn = false;
 			ball.speed_x = -ball.speed_x;
 		}
-		else if (is_inside(ball_right,y)){
+		else if (ball_top<=y+BRICK_WIDTH&&ball_bottom>=y&&ball_left==x+BRICK_LENGTH){
 			// the ball is coming from the RIGHT
 			hit = true;
 			drawn = false;
 			ball.speed_x = -ball.speed_x;
 		}
-		return hit;
+		//return hit;
 	}
+	*/
 	
 	void draw(){
 		if (!drawn){
@@ -224,4 +166,111 @@ struct Brick{
 			return false;
 		return true;
 	}
+};
+
+struct Ball{
+	double x;											//DOUBLE TO BE ABLE TO SET THE SPEED TO 0.1, 0.2, ETC...
+	double y;
+	double old_x;
+	double old_y;
+	double speed_x;
+	double speed_y;
+	
+	//constructor
+	Ball(double x, double y){
+		this->x = x;
+		this->y = y;
+		speed_x = 0.1;
+		speed_y = 0.1;
+	}
+	//////////////////////////MODIFIED...NOW IT WORKS///////////////////////////////////////////////
+	void draw(){
+		GLCD_DrawRect(old_y_to_draw,old_x_to_draw,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
+		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);
+		old_x_to_draw = x;
+		old_y_to_draw = y;	//WITH THREADS THE OLD_VAR MUST BE THE LAST DRAWN INSTEAD OF THE (REAL) LAST!!!!!!
+	}
+	
+	/////////////////////////////MODIFIED EXPRESSIONS TO MAKE IT WORK//////////////////////////////////
+	/*inside the if() use >=,<= instead of == to be allowed to use different values of speed_x, speed_y instead of 0.5 and 1*/
+	
+	//uses speed parameters to move the ball inside the screen
+	//bounces when hits a border
+	void move(Paddle p){
+		old_x = x;
+		old_y = y;
+		x += speed_x;
+		y += speed_y;
+		
+		// by now we assume that we have only 45 deg angles
+		//check x axis
+		if (x+BALL_DIAMETER>=SCREEN_HEIGHT){
+			x = SCREEN_HEIGHT - BALL_DIAMETER;
+			speed_x = -speed_x;
+		}
+		else if (x<=0){
+			x = 0;
+			speed_x = -speed_x;
+		}
+		
+		//check y axis
+		if (y+BALL_DIAMETER>=SCREEN_WIDTH){
+			y = SCREEN_WIDTH - BALL_DIAMETER;
+			speed_y = -speed_y;
+		}
+		else if (y<=PADDLE_WIDTH+PADDLE_Y&&(x>=p.x&&x<=(p.x+p.length))){
+			y = PADDLE_WIDTH+PADDLE_Y;
+			speed_y = -speed_y;
+		}
+		else if (y<=0){
+			system_reset();
+		}
+	}
+	
+	void check_collision(Brick brick){
+		double ball_top = y + BALL_DIAMETER;
+		double ball_bottom = y;													
+		double ball_right = x + BALL_DIAMETER;
+		double ball_left = x;														
+
+		if ((ball_left>=brick.x || ball_right<=brick.x+BRICK_LENGTH) && (ball_top>=brick.y)){
+			// the ball is coming from the BOTTOM
+			brick.hit = true;
+			brick.drawn = false;
+			brick.draw();
+			speed_y = -speed_y;
+		}
+		else if ((ball_left>=brick.x || ball_right<=brick.x+BRICK_LENGTH) && (ball_bottom<=brick.y+BRICK_WIDTH)){
+			// the ball is coming from the TOP
+			brick.hit = true;
+			brick.drawn = false;
+			brick.draw();
+			speed_y = -speed_y;
+		}
+		else if ((ball_top<=brick.y+BRICK_WIDTH || ball_bottom>=brick.y) && (ball_right>=brick.x)){
+			// the ball is coming from LEFT
+			brick.hit = true;
+			brick.drawn = false;
+			brick.draw();
+			speed_x = -speed_x;
+		}
+		else if ((ball_top<=brick.y+BRICK_WIDTH || ball_bottom>=brick.y) && (ball_left<=brick.x+BRICK_LENGTH)){
+			// the ball is coming from the RIGHT
+			brick.hit = true;
+			brick.drawn = false;
+			brick.draw();
+			speed_x = -speed_x;
+		}
+		//return hit;
+	}
+	
+	/////////////////////////////NEW////////////////////////////////7
+	private:
+		double old_x_to_draw;
+		double old_y_to_draw;
+		//TO REST THE SYSTEM...REGISTERS TAKEN FROM THE LPC DATASHEET
+		void system_reset(){
+			SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and set SYSRESETREQ to 1
+			for(;;);
+		}
 };

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "game_elements.cpp"
 #include "cmsis_os.h"
-#include <vector>
+#include "LPC17xx.h"
 
 #define BRICK_LINE_HEIGHT_BEGINNING 270
 #define END_OF_LINES 1210								//add 242 to increase the #rows by 1, subtract 242 to decrease the #rows by 1.......CURRENTLY 7 ROWS
@@ -25,6 +25,8 @@ uint32_t direction_left, direction_right;
 int8_t difficulty = -1;
 Paddle p(1);
 Ball ball(POSITION_TO_CENTRE_BALL,BEGINNING_OF_FALLING_BALL);
+Brick *brick_array[70];
+Brick b_last(220,BRICK_LINE_HEIGHT_BEGINNING-60);
 
 void GameInitialization(){
 	
@@ -45,17 +47,20 @@ void GameInitialization(){
 	
 	int i=2;
 	int j=0;
-	while(i*j<=END_OF_LINES){		
+	int s=0;
+	/*while(i*j<=END_OF_LINES){		
 		Brick b_ji(i,BRICK_LINE_HEIGHT_BEGINNING-10*j);
-		b_ji.draw();
+		brick_array[s] = &b_ji;
+		brick_array[s]->draw();
 		i+=24;
+		s++;
 		if(i==BRICK_LINE_LENGTH_END){
 			i=2;
 			j++;
 		}
 	}
-	
-	Brick b_last(LAST_BRICK,BRICK_LINE_HEIGHT_BEGINNING-10*j);
+	*/
+	//Brick b_last(LAST_BRICK,BRICK_LINE_HEIGHT_BEGINNING-10*j);
 	b_last.draw();
 
 	/////////////////////////////NEW//////////////////////////////////
@@ -72,6 +77,10 @@ void GameInitialization(){
 void game(void const *argument){										//TODO (PASS PARAMETERS)
   for(;;){
 		ball.move(p);
+		int i;
+		/*for(i=0; i<70; i++)
+			brick_array[i]->check_collision(ball);*/
+		ball.check_collision(b_last);
 		direction_left = Button_GetState(0);
 		direction_right = Button_GetState(1);
 		p.move(direction_left,direction_right);
@@ -84,6 +93,9 @@ void refresh_screen(void const *argument){					//TODO (PASS PARAMETERS)
   for(;;){
 		ball.draw();
 		p.draw();
+		int i;
+		/*for(i=0; i<70; i++)
+			brick_array[i]->draw();*/
     osDelay(SCREEN_DELAY);
   }
 }
