@@ -15,43 +15,59 @@
 #define SCREEN_DELAY 30 								//30ms -> 33Hz should be fine to avoid lag
 #define GAME_DELAY		5									//TODO find the correct value
 
-
 //RTOS threads
 osThreadId tid_screen;    //thread for the refresh of the screen
 osThreadId tid_game;			//thread for the game execution
 
 //global objects/variables to be used in different methods
 uint32_t direction_left, direction_right;
-int8_t difficulty = -1;
-Paddle p(1);
+Paddle pad;
 Ball ball(POSITION_TO_CENTRE_BALL,BEGINNING_OF_FALLING_BALL);
-Brick *brick_array[70];
+Brick* bricks_array[70];
 Brick b_last(220,BRICK_LINE_HEIGHT_BEGINNING-60);
 
+inline bool button1_click(){
+	if (Button_GetState(0) == 1 && Button_GetState(1) == 0 && Button_GetState(2) == 0)
+		return true;
+	else
+		return false;
+}
+
+inline bool button2_click(){
+	if (Button_GetState(0) == 0 && Button_GetState(1) == 1 && Button_GetState(2) == 0)
+		return true;
+	else
+		return false;
+}
+
+inline bool button3_click(){
+	if (Button_GetState(0) == 0 && Button_GetState(1) == 0 && Button_GetState(2) == 1)
+		return true;
+	else
+		return false;
+}
 void GameInitialization(){
-	
+	int8_t difficulty = -1;
 	GLCD_Clear(Black);
-	/////////////////////////////NEW//////////////////////////////////
+	/////////////////////////////NEW button1_click()//////////////////////////////////
 	while(difficulty==-1){																														//difficulty not selected. As soon as it is selected, the game starts
-		if(Button_GetState(0)==1&&Button_GetState(1)==0&&Button_GetState(2)==0)					//BUTTON1 for easy
+		if(button1_click())					//BUTTON1 for easy
 			difficulty=1;
-		else if(Button_GetState(0)==0&&Button_GetState(1)==1&&Button_GetState(2)==0)		//BUTTON2 for medium
+		else if(button2_click())		//BUTTON2 for medium
 			difficulty=2;
-		else if(Button_GetState(0)==0&&Button_GetState(1)==0&&Button_GetState(2)==1)		//BUTTON3 for hard
+		else if(button3_click())		//BUTTON3 for hard
 			difficulty=3;
 		else;
 	}
-	Paddle p_temp(difficulty);
-	p = p_temp;
-	p.draw();
+	
+	pad.set_difficulty(difficulty);
 	
 	int i=2;
 	int j=0;
 	int s=0;
-	/*while(i*j<=END_OF_LINES){		
-		Brick b_ji(i,BRICK_LINE_HEIGHT_BEGINNING-10*j);
-		brick_array[s] = &b_ji;
-		brick_array[s]->draw();
+	/////////////////////////////NEW bricks_array//////////////////////////////////
+	while(i*j<=END_OF_LINES){
+		bricks_array[s] = new Brick(i,BRICK_LINE_HEIGHT_BEGINNING-10*j); //DYNAMIC ALLOCATION
 		i+=24;
 		s++;
 		if(i==BRICK_LINE_LENGTH_END){
@@ -59,43 +75,39 @@ void GameInitialization(){
 			j++;
 		}
 	}
-	*/
+	
 	//Brick b_last(LAST_BRICK,BRICK_LINE_HEIGHT_BEGINNING-10*j);
-	b_last.draw();
 
-	/////////////////////////////NEW//////////////////////////////////
 	while(ball.y>(PADDLE_WIDTH+PADDLE_Y)){
 		ball.old_y = ball.y+1;
 		ball.old_x = ball.x;
-		ball.draw();
 		ball.y--;
 		delay(1);
 	}
 }
 
-/////////////////////////////NEW//////////////////////////////////
 void game(void const *argument){										//TODO (PASS PARAMETERS)
   for(;;){
-		ball.move(p);
+		ball.move(pad);
 		int i;
-		/*for(i=0; i<70; i++)
-			brick_array[i]->check_collision(ball);*/
+		for(i=0; i<70; i++)
+			ball.check_collision(*bricks_array[i]);
 		ball.check_collision(b_last);
 		direction_left = Button_GetState(0);
 		direction_right = Button_GetState(1);
-		p.move(direction_left,direction_right);
+		pad.move(direction_left,direction_right);
 		osDelay(GAME_DELAY);
   }
 }
 
-/////////////////////////////NEW//////////////////////////////////
 void refresh_screen(void const *argument){					//TODO (PASS PARAMETERS)
   for(;;){
+		b_last.draw();
 		ball.draw();
-		p.draw();
+		pad.draw();
 		int i;
 		/*for(i=0; i<70; i++)
-			brick_array[i]->draw();*/
+			bricks_array[i]->draw();*/
     osDelay(SCREEN_DELAY);
   }
 }

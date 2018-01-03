@@ -45,30 +45,49 @@ struct Paddle{
 		}
 	}
 	
+	//default constructor in EASY difficulty
+	Paddle() {length = 60; x = 90;}
+	
 	void draw(){
 		GLCD_DrawRect(PADDLE_Y,old_x,PADDLE_WIDTH,length,BACKGROUND_COLOUR);
 		GLCD_DrawRect(PADDLE_Y,x,PADDLE_WIDTH,length,PADDLE_COLOUR); 
 	}
-	/////////////////////////////NEW//////////////////////////////////
+
 	void move(bool direction_left, bool direction_right){
-		if(direction_left==1&&direction_right==0){							//means right click
-			if(x==0);																							//do nothing instead of moving the paddle
+		if (direction_left==1 && direction_right==0){							//means right click
+			if (x == 0);																							//do nothing instead of moving the paddle
 			else{		
-				old_x = x+PADDLE_WIDTH;
-				x-=1;
-				draw();
+				old_x = x + PADDLE_WIDTH;
+				x -= 1;
 			}
 		}
-		else if(direction_left==0&&direction_right==1){				//means left click
-			if(x+length==SCREEN_HEIGHT);												//do nothing instead of moving the paddle
+		else if (direction_left==0 && direction_right==1){				//means left click
+			if (x + length == SCREEN_HEIGHT);												//do nothing instead of moving the paddle
 			else{
 				old_x = x;
-				x+=1;
-				draw();
+				x += 1;
 			}
 		}
 		else;
 	}
+	
+	void set_difficulty(uint8_t diff){
+		switch(diff){
+			case 1: //easy level
+				length = 60;
+				x = 90;
+				break;
+			case 2: //medium
+				length = 40;
+				x = 100;
+				break;
+			case 3: //hard
+				length = 20;
+				x = 110;
+				break;
+		}
+	}
+	
 	
 	private:
 	uint16_t old_x;
@@ -112,41 +131,11 @@ struct Brick{
 		drawn = false;
 	}
 	
-	/////////////////////////////MMOVED INTO BALL STRUCT SINCE IT DID NOT CONSIDER BALL PARAMETER//////////////////////////////////
-	//check if it is hit, in case change the ball direction
-	/*void check_collision(Ball ball){
-		int16_t ball_top = ball.y + BALL_DIAMETER;
-		int16_t ball_bottom = ball.y;													//without ball.y-BALL_RADIUS since the reference is already the left-bottom angle
-		int16_t ball_right = ball.x + BALL_DIAMETER;
-		int16_t ball_left = ball.x;														//as above
-
-		if (ball_left>=x&&ball_right<=x+BRICK_LENGTH&&ball_top==y){
-			// the ball is coming from the BOTTOM
-			hit = true;
-			drawn = false;
-			ball.speed_y = -ball.speed_y;
-		}
-		else if (ball_left>=x&&ball_right<=x+BRICK_LENGTH&&ball_bottom==y+BRICK_WIDTH){
-			// the ball is coming from the TOP
-			hit = true;
-			drawn = false;
-			ball.speed_y = -ball.speed_y;
-		}
-		else if (ball_top<=y+BRICK_WIDTH&&ball_bottom>=y&&ball_right==x){
-			// the ball is coming from LEFT
-			hit = true;
-			drawn = false;
-			ball.speed_x = -ball.speed_x;
-		}
-		else if (ball_top<=y+BRICK_WIDTH&&ball_bottom>=y&&ball_left==x+BRICK_LENGTH){
-			// the ball is coming from the RIGHT
-			hit = true;
-			drawn = false;
-			ball.speed_x = -ball.speed_x;
-		}
-		//return hit;
-	}
-	*/
+	//default constructor 
+	//Brick() {hit = true; drawn = true;} //set drawn and hit, otherwise unexpected behaviour could occour (drawing or hitting it)
+	
+	//destructor (in case we need DELETE)
+	~Brick(){ }
 	
 	void draw(){
 		if (!drawn){
@@ -157,15 +146,7 @@ struct Brick{
 			drawn = true;
 		}
 	}
-	
-	private:
-	bool is_inside(int16_t tx, int16_t ty){
-		if (tx < x || tx > x+BRICK_LENGTH)
-			return false;
-		if (ty < y || ty > y+BRICK_WIDTH)
-			return false;
-		return true;
-	}
+
 };
 
 struct Ball{
@@ -183,12 +164,11 @@ struct Ball{
 		speed_x = 0.1;
 		speed_y = 0.1;
 	}
-	//////////////////////////MODIFIED...NOW IT WORKS///////////////////////////////////////////////
 	void draw(){
-		GLCD_DrawRect(old_y_to_draw,old_x_to_draw,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
+		GLCD_DrawRect(y_drawn,x_drawn,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
 		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);
-		old_x_to_draw = x;
-		old_y_to_draw = y;	//WITH THREADS THE OLD_VAR MUST BE THE LAST DRAWN INSTEAD OF THE (REAL) LAST!!!!!!
+		x_drawn = x;
+		y_drawn = y;
 	}
 	
 	/////////////////////////////MODIFIED EXPRESSIONS TO MAKE IT WORK//////////////////////////////////
@@ -233,44 +213,96 @@ struct Ball{
 		double ball_right = x + BALL_DIAMETER;
 		double ball_left = x;														
 
-		if ((ball_left>=brick.x || ball_right<=brick.x+BRICK_LENGTH) && (ball_top>=brick.y)){
+		//if ((ball_left>=brick.x || ball_right<=brick.x+BRICK_LENGTH) && (ball_top>=brick.y)){
+		if (collision_up(brick)){
 			// the ball is coming from the BOTTOM
 			brick.hit = true;
 			brick.drawn = false;
-			brick.draw();
 			speed_y = -speed_y;
 		}
-		else if ((ball_left>=brick.x || ball_right<=brick.x+BRICK_LENGTH) && (ball_bottom<=brick.y+BRICK_WIDTH)){
+		else if (collision_down(brick)){
 			// the ball is coming from the TOP
 			brick.hit = true;
 			brick.drawn = false;
-			brick.draw();
 			speed_y = -speed_y;
 		}
-		else if ((ball_top<=brick.y+BRICK_WIDTH || ball_bottom>=brick.y) && (ball_right>=brick.x)){
+		else if (collision_right(brick)){
 			// the ball is coming from LEFT
 			brick.hit = true;
 			brick.drawn = false;
-			brick.draw();
 			speed_x = -speed_x;
 		}
-		else if ((ball_top<=brick.y+BRICK_WIDTH || ball_bottom>=brick.y) && (ball_left<=brick.x+BRICK_LENGTH)){
+		else if (collision_left(brick)){
 			// the ball is coming from the RIGHT
 			brick.hit = true;
 			brick.drawn = false;
-			brick.draw();
 			speed_x = -speed_x;
 		}
-		//return hit;
 	}
-	
-	/////////////////////////////NEW////////////////////////////////7
+
 	private:
-		double old_x_to_draw;
-		double old_y_to_draw;
+		double x_drawn;
+		double y_drawn;
 		//TO REST THE SYSTEM...REGISTERS TAKEN FROM THE LPC DATASHEET
 		void system_reset(){
 			SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and set SYSRESETREQ to 1
 			for(;;);
+		}
+		
+		//from the pow of the ball, check if the upper side of the ball is inside a brick
+		bool collision_up(Brick brick){
+			double ball_top = y + BALL_DIAMETER;
+			double ball_bottom = y;													
+			double ball_right = x + BALL_DIAMETER;
+			double ball_left = x;
+			
+			if (brick.y <= ball_top)
+				if (brick.y+BRICK_WIDTH >= ball_top)
+					if (brick.x <= ball_right)
+						if (brick.x+BRICK_LENGTH >= ball_left)
+							return true;
+			return false;
+		}
+		
+		bool collision_down(Brick brick){
+			double ball_top = y + BALL_DIAMETER;
+			double ball_bottom = y;													
+			double ball_right = x + BALL_DIAMETER;
+			double ball_left = x;
+			
+			if (brick.y <= ball_bottom)
+				if (ball_bottom <= brick.y+BRICK_WIDTH)
+					if (brick.x <= ball_right)
+						if (ball_left <= brick.x+BRICK_LENGTH)
+							return true;
+			return false;
+		}
+		
+		bool collision_left(Brick brick){
+			double ball_top = y + BALL_DIAMETER;
+			double ball_bottom = y;													
+			double ball_right = x + BALL_DIAMETER;
+			double ball_left = x;
+			
+			if (brick.y <= ball_top)
+				if (ball_bottom <= brick.y+BRICK_WIDTH)
+					if (brick.x <= ball_left)
+						if (ball_left <= brick.x+BRICK_LENGTH)
+							return true;
+			return false;
+		}
+		
+		bool collision_right(Brick brick){
+			double ball_top = y + BALL_DIAMETER;
+			double ball_bottom = y;													
+			double ball_right = x + BALL_DIAMETER;
+			double ball_left = x;
+			
+			if (brick.y <= ball_top)
+				if (ball_bottom <= brick.y+BRICK_WIDTH)
+					if (brick.x <= ball_right)
+						if (ball_right <= brick.x+BRICK_LENGTH)
+							return true;
+			return false;
 		}
 };
