@@ -19,10 +19,9 @@ osThreadId tid_screen;    //thread for the refresh of the screen
 osThreadId tid_game;			//thread for the game execution
 
 //global objects/variables to be used in different methods
-uint32_t direction_left, direction_right;
 Paddle pad;
 Ball ball(POSITION_TO_CENTRE_BALL,BEGINNING_OF_FALLING_BALL);
-Brick *bricks_array[70];
+Brick bricks_array[70];
 Brick b_last(135,BRICK_LINE_HEIGHT_BEGINNING-60);
 
 inline bool button1_click(){
@@ -67,15 +66,15 @@ void GameInitialization(){
 	int j=0;
 	int s=0;
 	/////////////////////////////NEW bricks_array//////////////////////////////////
-	/*while(i*j<=END_OF_LINES){
-		bricks_array[s] = new Brick(i,BRICK_LINE_HEIGHT_BEGINNING-10*j); //DYNAMIC ALLOCATION
+	while(i*j<=END_OF_LINES){
+		bricks_array[s].set(i,BRICK_LINE_HEIGHT_BEGINNING-10*j); 
 		i+=24;
 		s++;
 		if(i==BRICK_LINE_LENGTH_END){
 			i=2;
 			j++;
 		}
-	}*/
+	}
 
 	while(ball.y>(PADDLE_WIDTH+PADDLE_Y)){
 		ball.old_y = ball.y+1;
@@ -93,8 +92,8 @@ void game(void const *argument){
 		//for(i=0; i<70; i++)
 			//ball.check_collision(*bricks_array[i]);
 		ball.check_collision(b_last);
-		direction_left = Button_GetState(0);
-		direction_right = Button_GetState(1);
+		uint32_t direction_left = Button_GetState(0);
+		uint32_t direction_right = Button_GetState(1);
 		pad.move(direction_left,direction_right);
 		osDelay(GAME_DELAY);
   }

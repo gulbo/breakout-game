@@ -15,7 +15,8 @@
 #define PADDLE_Y 5
 #define PADDLE_WIDTH 10
 #define PADDLE_COLOUR White
-
+#define INCREMENT_BALL_SPEED 2
+#define DECREMENT_BALL_SPEED 0.5
 #define BALL_COLOUR Magenta
 #define BALL_DIAMETER 6
 
@@ -26,8 +27,9 @@
 struct Paddle{
 	uint16_t x;
 	uint16_t length;
-	bool left;
-	bool right;
+	bool going_left;
+	bool going_right;
+	
 	//constructor
 	Paddle(uint8_t diff){
 		switch(diff){
@@ -44,8 +46,8 @@ struct Paddle{
 				x = 110;
 				break;
 		}
-		left=false;
-		right=false;
+		going_left = false;
+		going_right = false;
 	}
 	
 	//default constructor in EASY difficulty
@@ -54,29 +56,29 @@ struct Paddle{
 	void draw(){
 		GLCD_DrawRect(PADDLE_Y,x_drawn,PADDLE_WIDTH,length,BACKGROUND_COLOUR);
 		GLCD_DrawRect(PADDLE_Y,x,PADDLE_WIDTH,length,PADDLE_COLOUR);
-		x_drawn=x;
+		x_drawn = x;
 	}
 
 	void move(bool direction_left, bool direction_right){
-		if (direction_left==1 && direction_right==0){							//means right click
-			left=true;
-			right=false;																						
+		if (direction_left == 1 && direction_right == 0){							//means right click
+			going_left = true;
+			going_right = false;																						
 			if (x == 0);																						//do nothing instead of moving the paddle
 			else{		
 				x -= 1;
 			}
 		}
-		else if (direction_left==0 && direction_right==1){				//means left click
-			left=false;
-			right=true;
+		else if (direction_left == 0 && direction_right == 1){				//means left click
+			going_left = false;
+			going_right = true;
 			if (x + length == SCREEN_HEIGHT);												//do nothing instead of moving the paddle
 			else{
 				x += 1;
 			}
 		}
 		else{
-			left=false;
-			right=false;
+			going_left = false;
+			going_right = false;
 		}
 	}
 	
@@ -141,10 +143,40 @@ struct Brick{
 	}
 	
 	//default constructor 
-	//Brick() {hit = true; drawn = true;} //set drawn and hit, otherwise unexpected behaviour could occour (drawing or hitting it)
+	Brick() {hit = true; drawn = true; x = 0; y = 0;} //set drawn and hit, otherwise unexpected behaviour could occour (drawing or hitting it)
 	
 	//destructor (in case we need DELETE)
 	//~Brick(){ }
+	
+	void set(uint16_t x, int16_t y){
+		this->x = x;
+		this->y = y;
+		switch(y){
+			case 270:
+				this->colour = BRICK_COLOUR_1;
+				break;
+			case 260:
+				this->colour = BRICK_COLOUR_2;
+				break;
+			case 250:
+				this->colour = BRICK_COLOUR_3;
+				break;
+			case 240:
+				this->colour = BRICK_COLOUR_4;
+				break;
+			case 230:
+				this->colour = BRICK_COLOUR_5;
+				break;
+			case 220:
+				this->colour = BRICK_COLOUR_6;
+				break;
+			case 210:
+				this->colour = BRICK_COLOUR_7;
+				break;		
+		}
+		hit = false;
+		drawn = false;
+	}
 	
 	void draw(){
 		if (!drawn){
@@ -206,12 +238,16 @@ struct Ball{
 			y = SCREEN_WIDTH - BALL_DIAMETER;
 			speed_y = -speed_y;
 		}
-		else if (y<=PADDLE_WIDTH+PADDLE_Y&&(x>=p.x&&x<=(p.x+p.length))){
+		else if (y<=PADDLE_WIDTH+PADDLE_Y && (x>=p.x && x<=(p.x+p.length))){
 			y = PADDLE_WIDTH+PADDLE_Y;
-			if((p.left==true&&speed_x<0) || (p.right==true&&speed_x>0))
-				speed_y = -0.5*speed_y;
-			else if((p.left==true&&speed_x>0) || (p.right==true&&speed_x<0))
-				speed_y = -2*speed_y;
+			double p_center = (double) (p.x + p.length) / 2.0;
+			double linear_interp = (double) (x - p_center) * 2.0 / (double) p.length; //between 0 and 1
+			//if the paddle goes in the opposit direction of the ball...
+			if((p.going_left==true && speed_x<0) || (p.going_right==true && speed_x>0))
+				speed_y = -DECREMENT_BALL_SPEED * speed_y * linear_interp;	//decrease the speed
+			//... or if it goes in the same direction
+			else if((p.going_left==true && speed_x>0) || (p.going_right==true && speed_x<0))
+				speed_y = -INCREMENT_BALL_SPEED * speed_y * linear_interp;	//increase the speed
 			else 
 				speed_y = -speed_y;
 		}
