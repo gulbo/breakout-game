@@ -1,13 +1,12 @@
 #include "GLCD.h"
 #include "Board_Buttons.h"
-#include "Board_Led.h"
 #include <stdio.h>
 #include "game_elements.cpp"
 #include "cmsis_os.h"
 #include "LPC17xx.h"
 
 #define BRICK_LINE_HEIGHT_BEGINNING 270
-#define END_OF_LINES 1210								//add 242 to increase the #rows by 1, subtract 242 to decrease the #rows by 1.......CURRENTLY 7 ROWS
+#define END_OF_LINES 1210							//add 242 to increase the #rows by 1, subtract 242 to decrease the #rows by 1.......CURRENTLY 7 ROWS
 #define BRICK_LINE_LENGTH_END	242
 #define LAST_BRICK	218
 #define POSITION_TO_CENTRE_BALL 117
@@ -23,8 +22,8 @@ osThreadId tid_game;			//thread for the game execution
 uint32_t direction_left, direction_right;
 Paddle pad;
 Ball ball(POSITION_TO_CENTRE_BALL,BEGINNING_OF_FALLING_BALL);
-Brick* bricks_array[70];
-Brick b_last(220,BRICK_LINE_HEIGHT_BEGINNING-60);
+Brick *bricks_array[70];
+Brick b_last(135,BRICK_LINE_HEIGHT_BEGINNING-60);
 
 inline bool button1_click(){
 	if (Button_GetState(0) == 1 && Button_GetState(1) == 0 && Button_GetState(2) == 0)
@@ -46,6 +45,7 @@ inline bool button3_click(){
 	else
 		return false;
 }
+
 void GameInitialization(){
 	int8_t difficulty = -1;
 	GLCD_Clear(Black);
@@ -61,12 +61,13 @@ void GameInitialization(){
 	}
 	
 	pad.set_difficulty(difficulty);
-	
+	pad.draw();
+	b_last.draw();
 	int i=2;
 	int j=0;
 	int s=0;
 	/////////////////////////////NEW bricks_array//////////////////////////////////
-	while(i*j<=END_OF_LINES){
+	/*while(i*j<=END_OF_LINES){
 		bricks_array[s] = new Brick(i,BRICK_LINE_HEIGHT_BEGINNING-10*j); //DYNAMIC ALLOCATION
 		i+=24;
 		s++;
@@ -74,24 +75,23 @@ void GameInitialization(){
 			i=2;
 			j++;
 		}
-	}
-	
-	//Brick b_last(LAST_BRICK,BRICK_LINE_HEIGHT_BEGINNING-10*j);
+	}*/
 
 	while(ball.y>(PADDLE_WIDTH+PADDLE_Y)){
 		ball.old_y = ball.y+1;
 		ball.old_x = ball.x;
+		ball.draw();
 		ball.y--;
 		delay(1);
 	}
 }
 
-void game(void const *argument){										//TODO (PASS PARAMETERS)
+void game(void const *argument){										
   for(;;){
 		ball.move(pad);
 		int i;
-		for(i=0; i<70; i++)
-			ball.check_collision(*bricks_array[i]);
+		//for(i=0; i<70; i++)
+			//ball.check_collision(*bricks_array[i]);
 		ball.check_collision(b_last);
 		direction_left = Button_GetState(0);
 		direction_right = Button_GetState(1);
@@ -100,15 +100,15 @@ void game(void const *argument){										//TODO (PASS PARAMETERS)
   }
 }
 
-void refresh_screen(void const *argument){					//TODO (PASS PARAMETERS)
+void refresh_screen(void const *argument){					
   for(;;){
-		b_last.draw();
 		ball.draw();
 		pad.draw();
+		//b_last.draw();
 		int i;
-		/*for(i=0; i<70; i++)
-			bricks_array[i]->draw();*/
-    osDelay(SCREEN_DELAY);
+		//for(i=0; i<70; i++)
+			//bricks_array[i]->draw();
+		osDelay(SCREEN_DELAY);
   }
 }
 

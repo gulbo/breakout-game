@@ -26,7 +26,8 @@
 struct Paddle{
 	uint16_t x;
 	uint16_t length;
-	
+	bool left;
+	bool right;
 	//constructor
 	Paddle(uint8_t diff){
 		switch(diff){
@@ -43,32 +44,40 @@ struct Paddle{
 				x = 110;
 				break;
 		}
+		left=false;
+		right=false;
 	}
 	
 	//default constructor in EASY difficulty
 	Paddle() {length = 60; x = 90;}
 	
 	void draw(){
-		GLCD_DrawRect(PADDLE_Y,old_x,PADDLE_WIDTH,length,BACKGROUND_COLOUR);
-		GLCD_DrawRect(PADDLE_Y,x,PADDLE_WIDTH,length,PADDLE_COLOUR); 
+		GLCD_DrawRect(PADDLE_Y,x_drawn,PADDLE_WIDTH,length,BACKGROUND_COLOUR);
+		GLCD_DrawRect(PADDLE_Y,x,PADDLE_WIDTH,length,PADDLE_COLOUR);
+		x_drawn=x;
 	}
 
 	void move(bool direction_left, bool direction_right){
 		if (direction_left==1 && direction_right==0){							//means right click
-			if (x == 0);																							//do nothing instead of moving the paddle
+			left=true;
+			right=false;																						
+			if (x == 0);																						//do nothing instead of moving the paddle
 			else{		
-				old_x = x + PADDLE_WIDTH;
 				x -= 1;
 			}
 		}
 		else if (direction_left==0 && direction_right==1){				//means left click
+			left=false;
+			right=true;
 			if (x + length == SCREEN_HEIGHT);												//do nothing instead of moving the paddle
 			else{
-				old_x = x;
 				x += 1;
 			}
 		}
-		else;
+		else{
+			left=false;
+			right=false;
+		}
 	}
 	
 	void set_difficulty(uint8_t diff){
@@ -90,7 +99,7 @@ struct Paddle{
 	
 	
 	private:
-	uint16_t old_x;
+	uint16_t x_drawn;
 };
 
 struct Brick{
@@ -135,7 +144,7 @@ struct Brick{
 	//Brick() {hit = true; drawn = true;} //set drawn and hit, otherwise unexpected behaviour could occour (drawing or hitting it)
 	
 	//destructor (in case we need DELETE)
-	~Brick(){ }
+	//~Brick(){ }
 	
 	void draw(){
 		if (!drawn){
@@ -146,7 +155,6 @@ struct Brick{
 			drawn = true;
 		}
 	}
-
 };
 
 struct Ball{
@@ -156,13 +164,13 @@ struct Ball{
 	double old_y;
 	double speed_x;
 	double speed_y;
-	
+
 	//constructor
 	Ball(double x, double y){
 		this->x = x;
 		this->y = y;
-		speed_x = 0.1;
-		speed_y = 0.1;
+		speed_x = 0.5;
+		speed_y = 0.5;
 	}
 	void draw(){
 		GLCD_DrawRect(y_drawn,x_drawn,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
@@ -200,49 +208,59 @@ struct Ball{
 		}
 		else if (y<=PADDLE_WIDTH+PADDLE_Y&&(x>=p.x&&x<=(p.x+p.length))){
 			y = PADDLE_WIDTH+PADDLE_Y;
-			speed_y = -speed_y;
+			if((p.left==true&&speed_x<0) || (p.right==true&&speed_x>0))
+				speed_y = -0.5*speed_y;
+			else if((p.left==true&&speed_x>0) || (p.right==true&&speed_x<0))
+				speed_y = -2*speed_y;
+			else 
+				speed_y = -speed_y;
 		}
 		else if (y<=0){
 			system_reset();
 		}
 	}
 	
-	void check_collision(Brick brick){
-		double ball_top = y + BALL_DIAMETER;
-		double ball_bottom = y;													
-		double ball_right = x + BALL_DIAMETER;
-		double ball_left = x;														
-
-		//if ((ball_left>=brick.x || ball_right<=brick.x+BRICK_LENGTH) && (ball_top>=brick.y)){
-		if (collision_up(brick)){
-			// the ball is coming from the BOTTOM
-			brick.hit = true;
-			brick.drawn = false;
-			speed_y = -speed_y;
-		}
-		else if (collision_down(brick)){
-			// the ball is coming from the TOP
-			brick.hit = true;
-			brick.drawn = false;
-			speed_y = -speed_y;
-		}
-		else if (collision_right(brick)){
-			// the ball is coming from LEFT
-			brick.hit = true;
-			brick.drawn = false;
-			speed_x = -speed_x;
-		}
-		else if (collision_left(brick)){
-			// the ball is coming from the RIGHT
-			brick.hit = true;
-			brick.drawn = false;
-			speed_x = -speed_x;
+	void check_collision(Brick brick){													
+		if(!brick.hit){
+			if (collision_up(brick)){
+				// the ball is coming from the BOTTOM
+				brick.hit = true;
+				brick.drawn = false;
+				speed_y = -speed_y;
+				brick.draw();
+			}
+			if (collision_down(brick)){
+				// the ball is coming from the TOP
+				brick.hit = true;
+				brick.drawn = false;
+				speed_y = -speed_y;
+				brick.draw();
+				
+			}
+			if (collision_right(brick)){
+				// the ball is coming from LEFT
+				brick.hit = true;
+				brick.drawn = false;
+				speed_x = -speed_x;
+				brick.draw();
+			}
+			if (collision_left(brick)){
+				// the ball is coming from the RIGHT
+				brick.hit = true;
+				brick.drawn = false;
+				speed_x = -speed_x;
+				brick.draw();
+			}
 		}
 	}
 
 	private:
 		double x_drawn;
 		double y_drawn;
+	  double ball_top;
+		double ball_bottom;													
+		double ball_right;
+		double ball_left;
 		//TO REST THE SYSTEM...REGISTERS TAKEN FROM THE LPC DATASHEET
 		void system_reset(){
 			SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and set SYSRESETREQ to 1
@@ -251,10 +269,9 @@ struct Ball{
 		
 		//from the pow of the ball, check if the upper side of the ball is inside a brick
 		bool collision_up(Brick brick){
-			double ball_top = y + BALL_DIAMETER;
-			double ball_bottom = y;													
-			double ball_right = x + BALL_DIAMETER;
-			double ball_left = x;
+			ball_top = y + BALL_DIAMETER;
+			ball_right = x + BALL_DIAMETER;
+			ball_left = x;
 			
 			if (brick.y <= ball_top)
 				if (brick.y+BRICK_WIDTH >= ball_top)
@@ -265,10 +282,9 @@ struct Ball{
 		}
 		
 		bool collision_down(Brick brick){
-			double ball_top = y + BALL_DIAMETER;
-			double ball_bottom = y;													
-			double ball_right = x + BALL_DIAMETER;
-			double ball_left = x;
+			ball_bottom = y;													
+			ball_right = x + BALL_DIAMETER;
+			ball_left = x;
 			
 			if (brick.y <= ball_bottom)
 				if (ball_bottom <= brick.y+BRICK_WIDTH)
@@ -279,10 +295,9 @@ struct Ball{
 		}
 		
 		bool collision_left(Brick brick){
-			double ball_top = y + BALL_DIAMETER;
-			double ball_bottom = y;													
-			double ball_right = x + BALL_DIAMETER;
-			double ball_left = x;
+			ball_top = y + BALL_DIAMETER;
+			ball_bottom = y;											
+			ball_left = x;
 			
 			if (brick.y <= ball_top)
 				if (ball_bottom <= brick.y+BRICK_WIDTH)
@@ -293,10 +308,9 @@ struct Ball{
 		}
 		
 		bool collision_right(Brick brick){
-			double ball_top = y + BALL_DIAMETER;
-			double ball_bottom = y;													
-			double ball_right = x + BALL_DIAMETER;
-			double ball_left = x;
+			ball_top = y + BALL_DIAMETER;
+			ball_bottom = y;													
+			ball_right = x + BALL_DIAMETER;
 			
 			if (brick.y <= ball_top)
 				if (ball_bottom <= brick.y+BRICK_WIDTH)
