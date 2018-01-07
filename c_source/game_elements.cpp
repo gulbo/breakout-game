@@ -277,7 +277,7 @@ struct Ball{
 				brick.hit = true;
 				brick.drawn = false;
 				speed_y = -speed_y;
-				//brick.draw();
+				brick.draw();
 			}
 			else if (collision_down(brick)){
 				// the ball is coming from the TOP
@@ -303,7 +303,76 @@ struct Ball{
 			}
 		}
 	}
-
+	
+	void check_collision_new(Brick brick){
+		if(!brick.hit){
+			double ball_center_x = x + BALL_DIAMETER/2.0;
+			double ball_center_y = y + BALL_DIAMETER/2.0;
+			
+			uint8_t going_up = 0;
+			uint8_t going_dw = 0;
+			uint8_t going_lx = 0;
+			uint8_t going_rx = 0;
+			
+			if (is_inside(ball_left,ball_top,brick)){	//LEFT-TOP
+				going_up++;
+				going_lx++;
+			}
+			if (is_inside(ball_center_x,ball_top,brick)){ //CENTER-TOP
+				going_up++;
+			} 
+			if (is_inside(ball_right,ball_top,brick)){ //right-TOP
+				going_up++;
+				going_rx++;
+			}
+			if (is_inside(ball_left,ball_center_y,brick)){ //LEFT-CENTER
+				going_lx++;
+			} 
+			if (is_inside(ball_right,ball_center_y,brick)){ //RIGHT-CENTER
+				going_rx++;
+			}
+			if (is_inside(ball_left,ball_bottom,brick)){ //LEFT-BOTTOM
+				going_lx++;
+				going_dw++;
+			} 
+			if (is_inside(ball_center_x,ball_bottom,brick)){ //CENTER-BOTTOM
+				going_dw++;
+			} 
+			if (is_inside(ball_right,ball_bottom,brick)){ //RIGHT-BOTTOM
+				going_rx++;
+				going_dw++;
+			}
+			
+			if (going_up >= 2){
+				// the ball is coming from BOTTOM
+				brick.hit = true;
+				brick.drawn = false;
+				speed_y = -speed_y;
+				brick.draw();
+			}
+			else if (going_dw >= 2){
+				// the ball is coming from TOP
+				brick.hit = true;
+				brick.drawn = false;
+				speed_y = -speed_y;
+				brick.draw();
+			}
+			else if (going_rx >= 2){
+				// the ball is coming from LEFT
+				brick.hit = true;
+				brick.drawn = false;
+				speed_x = -speed_x;
+				brick.draw();
+			}
+			else if (going_lx >= 2){
+				// the ball is coming from RIGHT
+				brick.hit = true;
+				brick.drawn = false;
+				speed_x = -speed_x;
+				brick.draw();
+			}
+		}
+	}
 	private:
 		double x_drawn;
 		double y_drawn;
@@ -316,6 +385,14 @@ struct Ball{
 		void system_reset(){
 			SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and set SYSRESETREQ to 1
 			for(;;);
+		}
+		
+		//check if (x,y) is inside a brick
+		bool is_inside(double x, double y, Brick brick){
+			if (x >= brick.x && x <= brick.x+BRICK_LENGTH)
+				if (y >= brick.y && y < brick.y+BRICK_WIDTH)
+					return true;
+			return false;
 		}
 		
 		//from the pow of the ball, check if the upper side of the ball is inside a brick

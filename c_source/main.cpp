@@ -18,6 +18,9 @@
 osThreadId tid_screen;    //thread for the refresh of the screen
 osThreadId tid_game;			//thread for the game execution
 
+osMutexDef (game_mutex);    // Declare mutex
+osMutexId game_mutex_id; // Mutex ID
+
 //global objects/variables to be used in different methods
 Paddle pad;
 Ball ball(POSITION_TO_CENTRE_BALL,BEGINNING_OF_FALLING_BALL);
@@ -50,7 +53,7 @@ void GameInitialization(){
 	GLCD_Clear(Black);
 	/////////////////////////////NEW button1_click()//////////////////////////////////
 	while(difficulty==-1){																														//difficulty not selected. As soon as it is selected, the game starts
-		if(button1_click())					//BUTTON1 for easy
+		if(button1_click())			//BUTTON1 for easy
 			difficulty=1;
 		else if(button2_click())		//BUTTON2 for medium
 			difficulty=2;
@@ -65,7 +68,6 @@ void GameInitialization(){
 	int i=2;
 	int j=0;
 	int s=0;
-	/////////////////////////////NEW bricks_array//////////////////////////////////
 	while(i*j<=END_OF_LINES){
 		bricks_array[s].set(i,BRICK_LINE_HEIGHT_BEGINNING-10*j); 
 		i+=24;
@@ -86,7 +88,8 @@ void GameInitialization(){
 }
 
 void game(void const *argument){										
-  for(;;){
+	for(;;){
+		osMutexWait(game_mutex_id,0);
 		ball.move(pad);
 		//int i;
 		//for(i=0; i<70; i++)
@@ -95,20 +98,23 @@ void game(void const *argument){
 		uint32_t direction_left = Button_GetState(0);
 		uint32_t direction_right = Button_GetState(1);
 		pad.move(direction_left,direction_right);
+		osMutexRelease(game_mutex_id);
 		osDelay(GAME_DELAY);
-  }
+	}
 }
 
 void refresh_screen(void const *argument){					
-  for(;;){
+	for(;;){
+		osMutexWait(game_mutex_id,0);
 		ball.draw();
 		pad.draw();
 		b_last.draw();
 		//int i;
 		//for(i=0; i<70; i++)
 			//bricks_array[i]->draw();
+		osMutexRelease(game_mutex_id);
 		osDelay(SCREEN_DELAY);
-  }
+	}
 }
 
 
@@ -116,14 +122,17 @@ osThreadDef(game, osPriorityNormal, 1, 0);
 osThreadDef(refresh_screen, osPriorityNormal, 1, 0);
 	
 int main(void){
-  if (osKernelInitialize () != osOK){  //initialize the RTOS
-    //exit with an error message
+	if (osKernelInitialize () != osOK){  //initialize the RTOS
+		//exit with an error message
 		return -1;
-  }
- 
+	}
+	
 	GLCD_Init();
 	Buttons_Initialize();
 	GameInitialization();
+
+	//mutex
+	game_mutex_id = osMutexCreate(osMutex(game_mutex));
 	
 	tid_game = osThreadCreate(osThread(game), NULL);
 	if (tid_game == NULL) {
