@@ -88,7 +88,7 @@ void GameInitialization(){
 void game(void const *argument){										
   for(;;){
 		ball.move(pad);
-		int i;
+		//int i;
 		//for(i=0; i<70; i++)
 			//ball.check_collision(*bricks_array[i]);
 		ball.check_collision(b_last);
@@ -103,8 +103,8 @@ void refresh_screen(void const *argument){
   for(;;){
 		ball.draw();
 		pad.draw();
-		//b_last.draw();
-		int i;
+		b_last.draw();
+		//int i;
 		//for(i=0; i<70; i++)
 			//bricks_array[i]->draw();
 		osDelay(SCREEN_DELAY);
@@ -144,6 +144,4 @@ int main(void){
 	
 	//NO MAN'S LAND
 	while(1);
-	
-	return -1;
 }
