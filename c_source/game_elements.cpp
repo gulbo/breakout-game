@@ -23,8 +23,6 @@
 
 #define BACKGROUND_COLOUR Black
 
-
-
 struct Paddle{
 	uint16_t x;
 	uint16_t length;
@@ -202,7 +200,7 @@ struct Ball{
 	Ball(double x, double y){
 		this->x = x;
 		this->y = y;
-		speed_x = 0.5;
+		speed_x = 0.0;
 		speed_y = 0.5;
 	}
 	void draw(){
@@ -304,7 +302,7 @@ struct Ball{
 		}
 	}
 	
-	void check_collision_new(Brick brick){
+	bool check_collision_new(Brick brick){
 		if(!brick.hit){
 			double ball_center_x = x + BALL_DIAMETER/2.0;
 			double ball_center_y = y + BALL_DIAMETER/2.0;
@@ -313,6 +311,8 @@ struct Ball{
 			uint8_t going_dw = 0;
 			uint8_t going_lx = 0;
 			uint8_t going_rx = 0;
+			
+			bool is = false;
 			
 			if (is_inside(ball_left,ball_top,brick)){	//LEFT-TOP
 				going_up++;
@@ -345,32 +345,37 @@ struct Ball{
 			
 			if (going_up >= 2){
 				// the ball is coming from BOTTOM
-				brick.hit = true;
+				/*brick.hit = true;
 				brick.drawn = false;
 				speed_y = -speed_y;
-				brick.draw();
+				brick.draw();*/
+				is = true;
 			}
 			else if (going_dw >= 2){
 				// the ball is coming from TOP
-				brick.hit = true;
+				/*brick.hit = true;
 				brick.drawn = false;
 				speed_y = -speed_y;
-				brick.draw();
+				brick.draw();*/
+				is = true;
 			}
 			else if (going_rx >= 2){
 				// the ball is coming from LEFT
-				brick.hit = true;
+				/*brick.hit = true;
 				brick.drawn = false;
 				speed_x = -speed_x;
-				brick.draw();
+				brick.draw();*/
+				is = true;
 			}
 			else if (going_lx >= 2){
 				// the ball is coming from RIGHT
-				brick.hit = true;
+				/*brick.hit = true;
 				brick.drawn = false;
 				speed_x = -speed_x;
-				brick.draw();
+				brick.draw();*/
+				is = true;
 			}
+			return is;
 		}
 	}
 	private:

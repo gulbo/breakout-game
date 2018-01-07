@@ -9,7 +9,7 @@
 #define END_OF_LINES 1210							//add 242 to increase the #rows by 1, subtract 242 to decrease the #rows by 1.......CURRENTLY 7 ROWS
 #define BRICK_LINE_LENGTH_END	242
 #define LAST_BRICK	218
-#define POSITION_TO_CENTRE_BALL 117
+#define POSITION_TO_CENTRE_BALL 122 //117
 #define BEGINNING_OF_FALLING_BALL 100
 #define SCREEN_DELAY 30 								//30ms -> 33Hz should be fine to avoid lag
 #define GAME_DELAY		5									//TODO find the correct value
@@ -25,7 +25,7 @@ osMutexId game_mutex_id; // Mutex ID
 Paddle pad;
 Ball ball(POSITION_TO_CENTRE_BALL,BEGINNING_OF_FALLING_BALL);
 Brick bricks_array[70];
-Brick b_last(135,BRICK_LINE_HEIGHT_BEGINNING-60);
+Brick b_last(218,BRICK_LINE_HEIGHT_BEGINNING-60);
 
 inline bool button1_click(){
 	if (Button_GetState(0) == 1 && Button_GetState(1) == 0 && Button_GetState(2) == 0)
@@ -70,6 +70,7 @@ void GameInitialization(){
 	int s=0;
 	while(i*j<=END_OF_LINES){
 		bricks_array[s].set(i,BRICK_LINE_HEIGHT_BEGINNING-10*j); 
+		bricks_array[s].draw();
 		i+=24;
 		s++;
 		if(i==BRICK_LINE_LENGTH_END){
@@ -85,34 +86,44 @@ void GameInitialization(){
 		ball.y--;
 		delay(1);
 	}
+	/////////////////////////////////////////////////////////////////////
+	while(1){																													 //
+		ball.move(pad);																									 //	
+		ball.draw();																										 //	
+		bool hitttt = ball.check_collision_new(bricks_array[65]);				 //	 LOOK AT THIS
+		if(hitttt)																											 //
+			bricks_array[65].hit = true;																	 //
+		delay(1);																												 //
+	}																																	 //
+	/////////////////////////////////////////////////////////////////////
 }
 
 void game(void const *argument){										
 	for(;;){
-		osMutexWait(game_mutex_id,0);
+		//osMutexWait(game_mutex_id,0);
 		ball.move(pad);
-		//int i;
-		//for(i=0; i<70; i++)
-			//ball.check_collision(*bricks_array[i]);
-		ball.check_collision(b_last);
+		int i;
+		for(i=0; i<70; i++)
+			ball.check_collision_new(bricks_array[i]);
+		ball.check_collision_new(b_last);
 		uint32_t direction_left = Button_GetState(0);
 		uint32_t direction_right = Button_GetState(1);
 		pad.move(direction_left,direction_right);
-		osMutexRelease(game_mutex_id);
+		//osMutexRelease(game_mutex_id);
 		osDelay(GAME_DELAY);
 	}
 }
 
 void refresh_screen(void const *argument){					
 	for(;;){
-		osMutexWait(game_mutex_id,0);
+		//osMutexWait(game_mutex_id,0);
 		ball.draw();
 		pad.draw();
 		b_last.draw();
 		//int i;
 		//for(i=0; i<70; i++)
 			//bricks_array[i]->draw();
-		osMutexRelease(game_mutex_id);
+		//osMutexRelease(game_mutex_id);
 		osDelay(SCREEN_DELAY);
 	}
 }
