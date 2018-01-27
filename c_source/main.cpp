@@ -4,14 +4,16 @@
 #include "game_elements.cpp"
 #include "cmsis_os.h"
 #include "LPC17xx.h"
+#include "PIN_LPC17xx.h"
+#include "DAC_LPC1768.h"
 
 #define BRICK_LINE_HEIGHT_BEGINNING 270
 #define END_OF_LINES 1210							//add 242 to increase the #rows by 1, subtract 242 to decrease the #rows by 1.......CURRENTLY 7 ROWS
 #define BRICK_LINE_LENGTH_END	242
 #define LAST_BRICK	218
-#define POSITION_TO_CENTRE_BALL 122 //117
+#define POSITION_TO_CENTRE_BALL 117
 #define BEGINNING_OF_FALLING_BALL 100
-#define SCREEN_DELAY 30 								//30ms -> 33Hz should be fine to avoid lag
+#define SCREEN_DELAY 10 								//30ms -> 33Hz should be fine to avoid lag
 #define GAME_DELAY		5									//TODO find the correct value
 
 //RTOS threads
@@ -48,12 +50,16 @@ inline bool button3_click(){
 		return false;
 }
 
+void playNote(float analog_data[], float frequency, float duration, float volume){
+	
+	
+}
 void GameInitialization(){
 	int8_t difficulty = -1;
 	GLCD_Clear(Black);
 	/////////////////////////////NEW button1_click()//////////////////////////////////
-	while(difficulty==-1){																														//difficulty not selected. As soon as it is selected, the game starts
-		if(button1_click())			//BUTTON1 for easy
+	while(difficulty==-1){				//difficulty not selected. As soon as it is selected, the game starts
+		if(button1_click())					//BUTTON1 for easy
 			difficulty=1;
 		else if(button2_click())		//BUTTON2 for medium
 			difficulty=2;
@@ -78,7 +84,7 @@ void GameInitialization(){
 			j++;
 		}
 	}
-
+	
 	while(ball.y>(PADDLE_WIDTH+PADDLE_Y)){
 		ball.old_y = ball.y+1;
 		ball.old_x = ball.x;
@@ -87,14 +93,14 @@ void GameInitialization(){
 		delay(1);
 	}
 	/////////////////////////////////////////////////////////////////////
-	while(1){																													 //
+	/*while(1){																													 //
 		ball.move(pad);																									 //	
 		ball.draw();																										 //	
 		bool hitttt = ball.check_collision_new(bricks_array[65]);				 //	 LOOK AT THIS
 		if(hitttt)																											 //
 			bricks_array[65].hit = true;																	 //
 		delay(1);																												 //
-	}																																	 //
+	}			*/																														 //
 	/////////////////////////////////////////////////////////////////////
 }
 
@@ -103,9 +109,14 @@ void game(void const *argument){
 		//osMutexWait(game_mutex_id,0);
 		ball.move(pad);
 		int i;
-		for(i=0; i<70; i++)
-			ball.check_collision_new(bricks_array[i]);
-		ball.check_collision_new(b_last);
+		for(i=0; i<70; i++){
+			bool checked = ball.check_collision_new(bricks_array[i]);
+			if(checked)
+				bricks_array[i].hit = true;
+		}
+		bool c = ball.check_collision_new(b_last);
+		if(c)
+			b_last.hit = true;
 		uint32_t direction_left = Button_GetState(0);
 		uint32_t direction_right = Button_GetState(1);
 		pad.move(direction_left,direction_right);
@@ -143,7 +154,7 @@ int main(void){
 	GameInitialization();
 
 	//mutex
-	game_mutex_id = osMutexCreate(osMutex(game_mutex));
+	//game_mutex_id = osMutexCreate(osMutex(game_mutex));
 	
 	tid_game = osThreadCreate(osThread(game), NULL);
 	if (tid_game == NULL) {

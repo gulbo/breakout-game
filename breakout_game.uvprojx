@@ -478,6 +478,11 @@
               <FileType>1</FileType>
               <FilePath>.\c_source\LED_MCB1700.c</FilePath>
             </File>
+            <File>
+              <FileName>DAC_LPC1768.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\c_source\DAC_LPC1768.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -507,6 +512,11 @@
               <FileName>GLCD.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\h_source\GLCD.h</FilePath>
+            </File>
+            <File>
+              <FileName>DAC_LPC1768.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\h_source\DAC_LPC1768.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -18,7 +18,7 @@
 #define INCREMENT_BALL_SPEED 2
 #define DECREMENT_BALL_SPEED 0.5
 
-#define BALL_COLOUR Magenta
+#define BALL_COLOUR White
 #define BALL_DIAMETER 6
 
 #define BACKGROUND_COLOUR Black
@@ -59,19 +59,19 @@ struct Paddle{
 	}
 
 	void move(bool direction_left, bool direction_right){
-		if (direction_left == 1 && direction_right == 0){	//means right click
-			going_left = true;
-			going_right = false;																						
-			if (x == 0);																						//do nothing instead of moving the paddle
+		if (direction_left == 1 && direction_right == 0){	//means right click																						
+			if (x == 0);																		//do nothing instead of moving the paddle
 			else{		
+				going_left = true;
+				going_right = false;
 				x -= 1;
 			}
 		}
 		else if (direction_left == 0 && direction_right == 1){	//means left click
-			going_left = false;
-			going_right = true;
-			if (x + length == SCREEN_HEIGHT);	//do nothing instead of moving the paddle
+			if (x + length == SCREEN_HEIGHT);								//do nothing instead of moving the paddle
 			else{
+				going_left = false;
+				going_right = true;
 				x += 1;
 			}
 		}
@@ -97,7 +97,6 @@ struct Paddle{
 				break;
 		}
 	}
-	
 	
 	private:
 	uint16_t x_drawn;
@@ -195,13 +194,15 @@ struct Ball{
 	double old_y;
 	double speed_x;
 	double speed_y;
-
+	int number_of_bricks;
+	
 	//constructor
 	Ball(double x, double y){
 		this->x = x;
 		this->y = y;
-		speed_x = 0.0;
+		speed_x = 0.5;
 		speed_y = 0.5;
+		number_of_bricks = 70;
 	}
 	void draw(){
 		GLCD_DrawRect(y_drawn,x_drawn,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
@@ -227,7 +228,6 @@ struct Ball{
 		ball_left = x;
 		ball_right = x + BALL_DIAMETER;
 		
-		// by now we assume that we have only 45 deg angles
 		//check x axis
 		if (ball_right >= SCREEN_HEIGHT){ //right screen
 			x = SCREEN_HEIGHT - BALL_DIAMETER;
@@ -244,31 +244,37 @@ struct Ball{
 			speed_y = -speed_y;
 		}
 		//check if hits the paddle
-		else if (ball_bottom <= PADDLE_WIDTH+PADDLE_Y
-						&& ( ball_right>=p.x && ball_left<=(p.x+p.length))){
+		else if (ball_bottom == PADDLE_WIDTH+PADDLE_Y	&& ( ball_right>=p.x && ball_left<=(p.x+p.length))){
 			y = PADDLE_WIDTH+PADDLE_Y; //put again on top of the paddle
 			double ball_center = x + BALL_DIAMETER/2.0;
 			double paddle_center = p.x + p.length/2.0;
 			double linear_interp = (ball_center - paddle_center) * 2.0 / p.length; //between 0 and 1
-			if (linear_interp < 0)
+			/*if (linear_interp < 0)
 				linear_interp = -linear_interp;
 			if (linear_interp > 1)
-					linear_interp = 1;
+					linear_interp = 1;*/
 			//if the paddle goes in the opposit direction of the ball...
 			if((p.going_left==true && speed_x<0) || (p.going_right==true && speed_x>0))
-				speed_y = -DECREMENT_BALL_SPEED * speed_y * linear_interp;	//decrease the speed
+				speed_y = -DECREMENT_BALL_SPEED * speed_y;//* linear_interp;	//decrease the speed
 			//... or if it goes in the same direction
 			else if((p.going_left==true && speed_x>0) || (p.going_right==true && speed_x<0))
-				speed_y = -INCREMENT_BALL_SPEED * speed_y * linear_interp;	//increase the speed
+				speed_y = -INCREMENT_BALL_SPEED * speed_y;//* linear_interp;	//increase the speed
 			else 
 				speed_y = -speed_y;
 		}
+		else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_right == p.x)
+			speed_x = -speed_x;
+		else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_left == (p.x+p.length))
+			speed_x = -speed_x;
 		else if (y<=0){ //bottom screen
 			system_reset();
 		}
+
+		if(number_of_bricks==0)
+			system_reset();
 	}
 	
-	void check_collision(Brick brick){													
+	/*void check_collision(Brick brick){													
 		if(!brick.hit){
 			if (collision_up(brick)){
 				// the ball is coming from the BOTTOM
@@ -300,7 +306,7 @@ struct Ball{
 				//brick.draw();
 			}
 		}
-	}
+	}*/
 	
 	bool check_collision_new(Brick brick){
 		if(!brick.hit){
@@ -345,39 +351,51 @@ struct Ball{
 			
 			if (going_up >= 2){
 				// the ball is coming from BOTTOM
-				/*brick.hit = true;
+				brick.hit = true;
 				brick.drawn = false;
 				speed_y = -speed_y;
-				brick.draw();*/
+				brick.draw();
 				is = true;
+				number_of_bricks--;
 			}
 			else if (going_dw >= 2){
 				// the ball is coming from TOP
-				/*brick.hit = true;
+				brick.hit = true;
 				brick.drawn = false;
 				speed_y = -speed_y;
-				brick.draw();*/
+				brick.draw();
 				is = true;
+				number_of_bricks--;
 			}
 			else if (going_rx >= 2){
 				// the ball is coming from LEFT
-				/*brick.hit = true;
+				brick.hit = true;
 				brick.drawn = false;
 				speed_x = -speed_x;
-				brick.draw();*/
+				brick.draw();
 				is = true;
+				number_of_bricks--;
 			}
 			else if (going_lx >= 2){
 				// the ball is coming from RIGHT
-				/*brick.hit = true;
+				brick.hit = true;
 				brick.drawn = false;
 				speed_x = -speed_x;
-				brick.draw();*/
+				brick.draw();
 				is = true;
+				number_of_bricks--;
 			}
+			
 			return is;
 		}
 	}
+	
+	//TO REST THE SYSTEM...REGISTERS TAKEN FROM THE LPC DATASHEET
+	void system_reset(){
+		SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and set SYSRESETREQ to 1
+		for(;;);
+	}
+		
 	private:
 		double x_drawn;
 		double y_drawn;
@@ -385,12 +403,6 @@ struct Ball{
 		double ball_bottom;													
 		double ball_right;
 		double ball_left;
-	
-		//TO REST THE SYSTEM...REGISTERS TAKEN FROM THE LPC DATASHEET
-		void system_reset(){
-			SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and set SYSRESETREQ to 1
-			for(;;);
-		}
 		
 		//check if (x,y) is inside a brick
 		bool is_inside(double x, double y, Brick brick){
