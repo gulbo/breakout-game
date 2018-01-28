@@ -13,12 +13,12 @@
 #define LAST_BRICK	218
 #define POSITION_TO_CENTRE_BALL 117
 #define BEGINNING_OF_FALLING_BALL 100
-#define SCREEN_DELAY 10 								//30ms -> 33Hz should be fine to avoid lag
-#define GAME_DELAY		5									//TODO find the correct value
+#define SCREEN_DELAY 20								//30ms -> 33Hz should be fine to avoid lag
+#define GAME_DELAY   5									//TODO find the correct value
 
 //RTOS threads
 osThreadId tid_screen;    //thread for the refresh of the screen
-osThreadId tid_game;			//thread for the game execution
+osThreadId tid_game;	//thread for the game execution
 
 osMutexDef (game_mutex);    // Declare mutex
 osMutexId game_mutex_id; // Mutex ID
@@ -106,7 +106,7 @@ void GameInitialization(){
 
 void game(void const *argument){										
 	for(;;){
-		//osMutexWait(game_mutex_id,0);
+		osMutexWait(game_mutex_id,0);
 		ball.move(pad);
 		int i;
 		for(i=0; i<70; i++){
@@ -120,21 +120,21 @@ void game(void const *argument){
 		uint32_t direction_left = Button_GetState(0);
 		uint32_t direction_right = Button_GetState(1);
 		pad.move(direction_left,direction_right);
-		//osMutexRelease(game_mutex_id);
+		osMutexRelease(game_mutex_id);
 		osDelay(GAME_DELAY);
 	}
 }
 
 void refresh_screen(void const *argument){					
 	for(;;){
-		//osMutexWait(game_mutex_id,0);
+		osMutexWait(game_mutex_id,0);
 		ball.draw();
 		pad.draw();
 		b_last.draw();
 		//int i;
 		//for(i=0; i<70; i++)
 			//bricks_array[i]->draw();
-		//osMutexRelease(game_mutex_id);
+		osMutexRelease(game_mutex_id);
 		osDelay(SCREEN_DELAY);
 	}
 }
@@ -154,7 +154,7 @@ int main(void){
 	GameInitialization();
 
 	//mutex
-	//game_mutex_id = osMutexCreate(osMutex(game_mutex));
+	game_mutex_id = osMutexCreate(osMutex(game_mutex));
 	
 	tid_game = osThreadCreate(osThread(game), NULL);
 	if (tid_game == NULL) {

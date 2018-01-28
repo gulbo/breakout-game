@@ -15,12 +15,14 @@
 #define PADDLE_Y 5
 #define PADDLE_WIDTH 10
 #define PADDLE_COLOUR White
-#define INCREMENT_BALL_SPEED 2
-#define DECREMENT_BALL_SPEED 0.5
+#define PADDLE_SPEED 1.5
+#define PADDLE_ANGLE 0.1 						//10% of the paddle
+#define INCREMENT_BALL_SPEED 1.2
+#define DECREMENT_BALL_SPEED 0.8
 
 #define BALL_COLOUR White
-#define BALL_DIAMETER 6
-
+#define BALL_DIAMETER 4
+#define BALL_MAX_SPEED 2
 #define BACKGROUND_COLOUR Black
 
 struct Paddle{
@@ -64,7 +66,7 @@ struct Paddle{
 			else{		
 				going_left = true;
 				going_right = false;
-				x -= 1;
+				x -= PADDLE_SPEED;
 			}
 		}
 		else if (direction_left == 0 && direction_right == 1){	//means left click
@@ -72,7 +74,7 @@ struct Paddle{
 			else{
 				going_left = false;
 				going_right = true;
-				x += 1;
+				x += PADDLE_SPEED;
 			}
 		}
 		else{
@@ -201,9 +203,10 @@ struct Ball{
 		this->x = x;
 		this->y = y;
 		speed_x = 0.5;
-		speed_y = 0.5;
+		speed_y = 1.1;
 		number_of_bricks = 70;
 	}
+	
 	void draw(){
 		GLCD_DrawRect(y_drawn,x_drawn,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR);
 		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);
@@ -219,6 +222,10 @@ struct Ball{
 	void move(Paddle p){
 		old_x = x;
 		old_y = y;
+		
+		if (speed_y > BALL_MAX_SPEED) 
+			speed_y = BALL_MAX_SPEED;
+		
 		x += speed_x;
 		y += speed_y;
 		
@@ -244,23 +251,27 @@ struct Ball{
 			speed_y = -speed_y;
 		}
 		//check if hits the paddle
-		else if (ball_bottom == PADDLE_WIDTH+PADDLE_Y	&& ( ball_right>=p.x && ball_left<=(p.x+p.length))){
+		else if (ball_bottom <= PADDLE_WIDTH+PADDLE_Y	&& ( ball_right>=p.x && ball_left<=(p.x+p.length))){
 			y = PADDLE_WIDTH+PADDLE_Y; //put again on top of the paddle
-			double ball_center = x + BALL_DIAMETER/2.0;
-			double paddle_center = p.x + p.length/2.0;
-			double linear_interp = (ball_center - paddle_center) * 2.0 / p.length; //between 0 and 1
-			/*if (linear_interp < 0)
-				linear_interp = -linear_interp;
-			if (linear_interp > 1)
-					linear_interp = 1;*/
+			double left_angle = p.x + p.length * PADDLE_ANGLE;
+			double right_angle = p.x + p.length * (1-PADDLE_ANGLE);
 			//if the paddle goes in the opposit direction of the ball...
 			if((p.going_left==true && speed_x<0) || (p.going_right==true && speed_x>0))
-				speed_y = -DECREMENT_BALL_SPEED * speed_y;//* linear_interp;	//decrease the speed
+				speed_y = -DECREMENT_BALL_SPEED * speed_y;	//decrease the speed
 			//... or if it goes in the same direction
 			else if((p.going_left==true && speed_x>0) || (p.going_right==true && speed_x<0))
-				speed_y = -INCREMENT_BALL_SPEED * speed_y;//* linear_interp;	//increase the speed
+				speed_y = -INCREMENT_BALL_SPEED * speed_y;	//increase the speed
 			else 
 				speed_y = -speed_y;
+			//check the angles
+			if (ball_right <= left_angle){ //force ball to go to LEFT
+				if (speed_x > 0)
+					speed_x = -speed_x;
+			}
+			else if (ball_left >= right_angle){ //force ball to go to RIGHT
+				if (speed_x < 0)
+					speed_x = -speed_x;
+			}
 		}
 		else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_right == p.x)
 			speed_x = -speed_x;
