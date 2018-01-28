@@ -100,3 +100,96 @@ int32_t DAC_SetValue (uint32_t val) {
 uint32_t DAC_GetResolution (void) {
   return DAC_RESOLUTION;
 }
+
+
+void sound_delay (int us) {
+	us *= 100; //clocks 
+	while (us--);
+}
+
+void play_sound(void){
+	uint32_t volume = 1023;
+	static uint32_t period = 80;   // ie 1/freq
+	uint32_t length = 500;
+	
+	bool tone = true;
+	
+	for (int j=0; j<length; j++){
+		if (tone)
+			//DAC_SetValue(volume);
+			LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (1023 & (0x3FF << 6));
+
+		else
+			//DAC_SetValue(0);
+			LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (0 & (0x3FF << 6));
+		if (j % period)
+			tone = !tone;
+		sound_delay(20); //in theory these are 10us==> 100khz
+	}
+	
+	if(period > 35)	
+		period -= 15;
+	else if(period > 15)
+		period -=2;
+	else if(period>2)
+		period--;
+}
+
+void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more or less
+	uint32_t period;   // ie 1/freq
+	uint32_t length;    // length of one note
+	bool up;
+	bool tone = true;
+	
+	if (win){
+		period = 30;
+		up = true;
+		length = 500;
+	}
+	else{
+		period = 37;
+		length = 3000;
+	}
+	
+	for (int i=0; i<duration; i++){
+		for (int j=0; j<length; j++){
+			if (tone)
+				//DAC_SetValue(1023);
+				LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (1023 & (0x3FF << 6));
+
+			else
+				//DAC_SetValue(0);
+				LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (0 & (0x3FF << 6));
+			if (j % period)
+				tone = !tone;
+			sound_delay(20); //in theory these are 20us==> 50khz
+		}
+		
+		if (win){
+			if (up){
+				if(period > 15)
+					period -=2;
+				else if(period>2)
+					period--;
+				else
+					up = !up;
+			}
+			else{
+				if (period < 15)
+					period++;
+				else if(period < 25)
+					period +=2;
+				else 
+					up = !up;
+			}
+		}
+		else{
+			if (period > 80)
+				period = 80;
+			if (period > 40)
+				period +=20;
+			else
+				period +=3;
+		}
+	}
+}

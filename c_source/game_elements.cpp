@@ -1,8 +1,9 @@
 #include <stdint.h>
 #include "GLCD.h"
 #include "LPC17xx.h"
+#include "DAC_LPC1768.h"
 
-#define BRICK_LENGTH 20
+#define BRICK_LENGTH 23		//20
 #define BRICK_WIDTH 8
 #define BRICK_COLOUR_1 Purple
 #define BRICK_COLOUR_2 Blue
@@ -214,9 +215,6 @@ struct Ball{
 		y_drawn = y;
 	}
 	
-	/////////////////////////////MODIFIED EXPRESSIONS TO MAKE IT WORK//////////////////////////////////
-	/*inside the if() use >=,<= instead of == to be allowed to use different values of speed_x, speed_y instead of 0.5 and 1*/
-	
 	//uses speed parameters to move the ball inside the screen
 	//bounces when hits a border
 	void move(Paddle p){
@@ -277,15 +275,18 @@ struct Ball{
 			speed_x = -speed_x;
 		else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_left == (p.x+p.length))
 			speed_x = -speed_x;
-		else if (y<=0){ //bottom screen
+		else if (y<=0){ //bottom screen YOU LOST
+			play_music(LOSS,LOSS_DURATION);
 			system_reset();
 		}
 
-		if(number_of_bricks==0)
+		if(number_of_bricks==0){ //YOU WON
+			play_music(WIN,WIN_DURATION);
 			system_reset();
+		}
 	}
 	
-	/*void check_collision(Brick brick){													
+	/* void check_collision(Brick brick){													
 		if(!brick.hit){
 			if (collision_up(brick)){
 				// the ball is coming from the BOTTOM
@@ -317,9 +318,11 @@ struct Ball{
 				//brick.draw();
 			}
 		}
-	}*/
+	} 
+	*/
 	
 	bool check_collision_new(Brick brick){
+		bool is = false;
 		if(!brick.hit){
 			double ball_center_x = x + BALL_DIAMETER/2.0;
 			double ball_center_y = y + BALL_DIAMETER/2.0;
@@ -329,7 +332,7 @@ struct Ball{
 			uint8_t going_lx = 0;
 			uint8_t going_rx = 0;
 			
-			bool is = false;
+			
 			
 			if (is_inside(ball_left,ball_top,brick)){	//LEFT-TOP
 				going_up++;
@@ -397,8 +400,10 @@ struct Ball{
 				number_of_bricks--;
 			}
 			
-			return is;
+			if (is)
+				play_sound();
 		}
+		return is;
 	}
 	
 	//TO REST THE SYSTEM...REGISTERS TAKEN FROM THE LPC DATASHEET
