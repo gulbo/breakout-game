@@ -65,7 +65,7 @@ int32_t Buttons_Initialize (void) {
   /* Enable GPIO clock */
   GPIO_PortClock   (1);
 
-  /* Configure Pins */
+  //Configure Pins...all the buttons has been added in order not to call the same function 3 times 
   PIN_Configure (BUTTON_PIN[0].Portnum, BUTTON_PIN[0].Pinnum, PIN_FUNC_0, PIN_PINMODE_PULLDOWN, PIN_PINMODE_NORMAL);
   GPIO_SetDir   (BUTTON_PIN[0].Portnum, BUTTON_PIN[0].Pinnum, GPIO_DIR_INPUT);
 	

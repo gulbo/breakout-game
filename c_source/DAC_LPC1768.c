@@ -103,30 +103,33 @@ uint32_t DAC_GetResolution (void) {
 
 
 void sound_delay (int us) {
-	us *= 100; //clocks 
+	us *= 100; 													//clocks 
 	while (us--);
 }
 
 void play_sound(void){
 	uint32_t volume = 1023;
-	static uint32_t period = 80;   // ie 1/freq
+	static uint32_t period = 80;   			// i.e. 1/freq
 	uint32_t length = 500;
 	
 	bool tone = true;
 	
 	for (int j=0; j<length; j++){
+		//to create a square wave
 		if (tone)
-			//DAC_SetValue(volume);
+			//DAC_SetValue(1023);
 			LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (1023 & (0x3FF << 6));
-
 		else
 			//DAC_SetValue(0);
 			LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (0 & (0x3FF << 6));
-		if (j % period)
+		if (j % period)										//if j overcomes the value of the period, high-to-low or low-to-high
 			tone = !tone;
-		sound_delay(20); //in theory these are 10us==> 100khz
+		sound_delay(20); 
 	}
 	
+	/*changes the frequency of the reproduced note...since it is difficult to 
+		notice the difference between period=80,79,78,etc...the decrease is 
+	  not constant*/
 	if(period > 35)	
 		period -= 15;
 	else if(period > 15)
@@ -136,8 +139,8 @@ void play_sound(void){
 }
 
 void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more or less
-	uint32_t period;   // ie 1/freq
-	uint32_t length;    // length of one note
+	uint32_t period;   													// ie 1/freq
+	uint32_t length;    												// length of one note
 	bool up;
 	bool tone = true;
 	
@@ -156,17 +159,16 @@ void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more 
 			if (tone)
 				//DAC_SetValue(1023);
 				LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (1023 & (0x3FF << 6));
-
 			else
 				//DAC_SetValue(0);
 				LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (0 & (0x3FF << 6));
 			if (j % period)
 				tone = !tone;
-			sound_delay(20); //in theory these are 20us==> 50khz
+			sound_delay(20); 
 		}
 		
-		if (win){
-			if (up){
+		if (win){        								//in case of victory...or at the beginning of the game
+			if (up){											//ascendent tonality
 				if(period > 15)
 					period -=2;
 				else if(period>2)
@@ -174,7 +176,7 @@ void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more 
 				else
 					up = !up;
 			}
-			else{
+			else{													//descendent tonality
 				if (period < 15)
 					period++;
 				else if(period < 25)
@@ -183,8 +185,8 @@ void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more 
 					up = !up;
 			}
 		}
-		else{
-			if (period > 80)
+		else{														//in case of loss
+			if (period > 80)							
 				period = 80;
 			if (period > 40)
 				period +=20;
