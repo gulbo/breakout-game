@@ -17,7 +17,10 @@
 #define PADDLE_WIDTH 10
 #define PADDLE_COLOUR White
 #define PADDLE_SPEED 1.5
-#define PADDLE_ANGLE 0.1 									//10% of the paddle
+#define PADDLE_ANGLE 0.1 //10% of the paddle
+#define PADDLE_EASY 60
+#define PADDLE_MEDIUM 40
+#define PADDLE_HARD 20
 #define INCREMENT_BALL_SPEED 1.2
 #define DECREMENT_BALL_SPEED 0.8
 
@@ -27,33 +30,24 @@
 #define BACKGROUND_COLOUR Black
 
 struct Paddle{
-	uint16_t x;
+	int16_t x;
 	uint16_t length;
 	bool going_left;
 	bool going_right;
 	
 	//constructor
 	Paddle(uint8_t diff){
-		switch(diff){
-			case 1: 														//easy level
-				length = 60;
-				x = 90;
-				break;
-			case 2: 														//medium
-				length = 40;
-				x = 100;
-				break;
-			case 3: 														//hard
-				length = 20;
-				x = 110;
-				break;
-		}
+		set_difficulty(diff);
 		going_left = false;
 		going_right = false;
 	}
 	
 	//default constructor in EASY difficulty
-	Paddle() {length = 60; x = 90;}
+	Paddle() {
+		set_difficulty(1);
+		going_left = false;
+		going_right = false;
+	}
 	
 	/*************************Method to draw the paddle on the screen*************************/
 	void draw(){
@@ -63,8 +57,15 @@ struct Paddle{
 	}
 
 	/*************************Method to make the paddle move*************************/
-	void move(bool direction_left, bool direction_right){
-		if (direction_left == 1 && direction_right == 0){				//means right click																						
+	void move(bool direction_left, bool direction_right, int x_ball=-1){
+		if(x_ball!=-1){								//automatic mode
+			x = x_ball-length/2;
+			if (x < 0)
+				x = 0;
+			else if (x+length > SCREEN_HEIGHT)
+				x = SCREEN_HEIGHT-length;
+		}
+		if (direction_left == 1 && direction_right == 0){		//means right click																						
 			if (x == 0);																					//paddle has reached the left side of the screen...do nothing instead of moving the paddle
 			else{		
 				going_left = true;
@@ -88,18 +89,25 @@ struct Paddle{
 	
 	void set_difficulty(uint8_t diff){
 		switch(diff){
-			case 1: 															//easy level
-				length = 60;
-				x = 90;
+			case 1: 									//easy level
+				length = PADDLE_EASY;
+				x = (SCREEN_HEIGHT-PADDLE_EASY)/2;
 				break;
-			case 2: 															//medium
-				length = 40;
-				x = 100;
+			case 2: 									//medium
+				length = PADDLE_MEDIUM;
+				x = (SCREEN_HEIGHT-PADDLE_MEDIUM)/2;
 				break;
-			case 3: 															//hard
-				length = 20;
-				x = 110;
+			case 3: 									//hard
+				length = PADDLE_HARD;
+				x = (SCREEN_HEIGHT-PADDLE_HARD)/2;
 				break;
+			case 4:									//auto
+				length = PADDLE_MEDIUM;
+				x = (SCREEN_HEIGHT-PADDLE_MEDIUM)/2;
+				break;
+			default:									//error
+				length = 0;
+				x = -1;
 		}
 	}
 	
@@ -212,7 +220,7 @@ struct Ball{
 	/*************************Method to draw the ball*************************/
 	void draw(){
 		GLCD_DrawRect(y_drawn,x_drawn,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR); //deletes the ball of the previous cycle, before its movement
-		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);										//displays the ball after its movement
+		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);				//displays the ball after its movement
 		x_drawn = x;
 		y_drawn = y;
 	}
@@ -223,7 +231,7 @@ struct Ball{
 		old_y = y;
 		
 		if (speed_y > BALL_MAX_SPEED) 
-			speed_y = BALL_MAX_SPEED;							//to avoid uncorrect behaviours of the ball
+			speed_y = BALL_MAX_SPEED;			//to avoid uncorrect behaviours of the ball
 		
 		x += speed_x;
 		y += speed_y;
@@ -237,17 +245,17 @@ struct Ball{
 		//check x axis
 		if (ball_right >= SCREEN_HEIGHT){ 			//right border of the screen
 			x = SCREEN_HEIGHT - BALL_DIAMETER;
-			speed_x = -speed_x;										//bounces
+			speed_x = -speed_x;				//bounces
 		}
-		else if (ball_left <= 0){ 							//left border of the screen
+		else if (ball_left <= 0){ 				//left border of the screen
 			x = 0;
-			speed_x = -speed_x;										//bounces
+			speed_x = -speed_x;				//bounces
 		}
 		
 		//check y axis
-		if (ball_top >= SCREEN_WIDTH){ 					//top border of the screen
+		if (ball_top >= SCREEN_WIDTH){ 			//top border of the screen
 			y = SCREEN_WIDTH - BALL_DIAMETER;
-			speed_y = -speed_y;										//bounces
+			speed_y = -speed_y;				//bounces
 		}
 		
 		//check if hits the paddle
@@ -391,7 +399,7 @@ struct Ball{
 	private:
 		double x_drawn;
 		double y_drawn;
-	  double ball_top;
+		double ball_top;
 		double ball_bottom;													
 		double ball_right;
 		double ball_left;

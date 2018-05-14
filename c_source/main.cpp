@@ -55,18 +55,28 @@ inline bool button3_click(){
 		return false;
 }
 
+inline bool allButtons_click(){
+	if (Button_GetState(0) == 1 && Button_GetState(1) == 1 && Button_GetState(2) == 1)
+		return true;
+	else
+		return false;
+}
+
 /*************************Initialization of the game*************************/
 void GameInitialization(){
 	int8_t difficulty = -1;
 	GLCD_Clear(Black);								//LCD black while waiting for the difficulty
-	while(difficulty==-1){						//difficulty not selected. As soon as it is selected, the game starts
-		if(button1_click())							//BUTTON1 for easy
-			difficulty=1;
+	while(difficulty == -1){						//difficulty not selected. As soon as it is selected, the game starts
+		delay(20);
+		if(button1_click())					//BUTTON1 for easy
+			difficulty = 1;
 		else if(button2_click())				//BUTTON2 for medium
-			difficulty=2;
+			difficulty = 2;
 		else if(button3_click())				//BUTTON3 for hard
-			difficulty=3;
-		else;
+			difficulty = 3;
+		else if (allButtons_click())				//all buttons for automatic mode
+			difficulty = 4;
+		
 	}
 	
 	pad.set_difficulty(difficulty);		//set the size of the paddle
@@ -103,15 +113,17 @@ void game(void const *argument){
 		osMutexWait(game_mutex_id,0);
 		ball.move(pad);
 		int i;
-		for(i=0; i<70; i++){																							//every execution of the method, it checks if the ball touches
+		int hits = 0;
+		for(i=0; i<70 && hits<3; i++){																							//every execution of the method, it checks if the ball touches
 			bool checked = ball.check_collision(bricks_array[i]);						//1 of the 70 bricks; if yes, hit is set to true and will be used
-			if(checked){																										//to change its color (i.e. to break it)
+			if(checked){																									//to change its color (i.e. to break it)
 				bricks_array[i].hit = true;
+				hits++;
 			}
 		}
 		uint32_t direction_left = Button_GetState(0);											//checks if the paddle goes left
 		uint32_t direction_right = Button_GetState(1);										//checks if the paddle goes right
-		pad.move(direction_left,direction_right);													//to make the paddle move in the directon wanted
+		pad.move(direction_left,direction_right, ball.x);													//to make the paddle move in the directon wanted
 		osMutexRelease(game_mutex_id);
 		osDelay(GAME_DELAY);																							
 	}
