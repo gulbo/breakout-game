@@ -145,18 +145,18 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>132</LineNumber>
+          <LineNumber>66</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>7268</Address>
+          <Address>8978</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>C:\Mac\Home\projects\CA_arm\breakout-game\c_source\main.cpp</Filename>
+          <Filename>\Mac\Home\projects\CA_arm\breakout-game\c_source\game_elements.cpp</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\\c_source/main.cpp\132</Expression>
+          <Expression>\\breakout_game\c_source/game_elements.cpp\66</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -177,6 +177,16 @@
           <WinNumber>2</WinNumber>
           <ItemText>ball</ItemText>
         </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>2</WinNumber>
+          <ItemText>point</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>2</WinNumber>
+          <ItemText>x</ItemText>
+        </Ww>
       </WatchWindow2>
       <ScvdPack>
         <Filename>C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.2.0\CMSIS\RTOS2\RTX\RTX5.scvd</Filename>
@@ -189,7 +199,7 @@
       <DebugFlag>
         <trace>0</trace>
         <periodic>0</periodic>
-        <aLwin>0</aLwin>
+        <aLwin>1</aLwin>
         <aCover>0</aCover>
         <aSer1>0</aSer1>
         <aSer2>0</aSer2>

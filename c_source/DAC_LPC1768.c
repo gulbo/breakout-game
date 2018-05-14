@@ -103,7 +103,7 @@ uint32_t DAC_GetResolution (void) {
 
 
 void sound_delay (int us) {
-	us *= 100; 													//clocks 
+	us *= 100; 							//clocks 
 	while (us--);
 }
 
@@ -118,11 +118,11 @@ void play_sound(void){
 		//to create a square wave
 		if (tone)
 			//DAC_SetValue(1023);
-			LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (1023 & (0x3FF << 6));
+			LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (volume & (0x3FF << 6));
 		else
 			//DAC_SetValue(0);
 			LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (0 & (0x3FF << 6));
-		if (j % period)										//if j overcomes the value of the period, high-to-low or low-to-high
+		if (j % period)					//if j overcomes the value of the period, high-to-low or low-to-high
 			tone = !tone;
 		sound_delay(20); 
 	}
@@ -139,10 +139,11 @@ void play_sound(void){
 }
 
 void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more or less
-	uint32_t period;   													// ie 1/freq
-	uint32_t length;    												// length of one note
+	uint32_t period;   	// ie 1/freq
+	uint32_t length;    	// length of one note
 	bool up;
 	bool tone = true;
+	uint32_t volume = 1023;
 	
 	if (win){
 		period = 30;
@@ -158,7 +159,7 @@ void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more 
 		for (int j=0; j<length; j++){
 			if (tone)
 				//DAC_SetValue(1023);
-				LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (1023 & (0x3FF << 6));
+				LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (volume & (0x3FF << 6));
 			else
 				//DAC_SetValue(0);
 				LPC_DAC->DACR = (LPC_DAC->DACR & (~(0x3FF << 6))) | (0 & (0x3FF << 6));
@@ -167,8 +168,8 @@ void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more 
 			sound_delay(20); 
 		}
 		
-		if (win){        								//in case of victory...or at the beginning of the game
-			if (up){											//ascendent tonality
+		if (win){        						//in case of victory...or at the beginning of the game
+			if (up){						//ascendent tonality
 				if(period > 15)
 					period -=2;
 				else if(period>2)
@@ -176,7 +177,7 @@ void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more 
 				else
 					up = !up;
 			}
-			else{													//descendent tonality
+			else{							//descendent tonality
 				if (period < 15)
 					period++;
 				else if(period < 25)
@@ -185,7 +186,7 @@ void play_music(bool win, uint32_t duration){ //one scale is duration = 20 more 
 					up = !up;
 			}
 		}
-		else{														//in case of loss
+		else{								//in case of loss
 			if (period > 80)							
 				period = 80;
 			if (period > 40)
