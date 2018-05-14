@@ -37,6 +37,7 @@ struct Paddle{
 	
 	//constructor
 	Paddle(uint8_t diff){
+		self = false;
 		set_difficulty(diff);
 		going_left = false;
 		going_right = false;
@@ -44,6 +45,7 @@ struct Paddle{
 	
 	//default constructor in EASY difficulty
 	Paddle() {
+		self = false;
 		set_difficulty(1);
 		going_left = false;
 		going_right = false;
@@ -58,7 +60,7 @@ struct Paddle{
 
 	/*************************Method to make the paddle move*************************/
 	void move(bool direction_left, bool direction_right, int x_ball=-1){
-		if(x_ball!=-1){								//automatic mode
+		if(x_ball!=-1 && self){							//automatic mode
 			x = x_ball-length/2;
 			if (x < 0)
 				x = 0;
@@ -74,7 +76,7 @@ struct Paddle{
 			}
 		}
 		else if (direction_left == 0 && direction_right == 1){	//means left click
-			if (x + length == SCREEN_HEIGHT);											//paddle has reached the right side of the screen...do nothing instead of moving the paddle
+			if (x + length == SCREEN_HEIGHT);				//paddle has reached the right side of the screen...do nothing instead of moving the paddle
 			else{
 				going_left = false;
 				going_right = true;
@@ -104,6 +106,7 @@ struct Paddle{
 			case 4:									//auto
 				length = PADDLE_MEDIUM;
 				x = (SCREEN_HEIGHT-PADDLE_MEDIUM)/2;
+				self = true;
 				break;
 			default:									//error
 				length = 0;
@@ -113,6 +116,7 @@ struct Paddle{
 	
 	private:
 	uint16_t x_drawn;
+	bool self;
 };
 
 struct Brick{
