@@ -250,8 +250,16 @@ struct Ball{
 			speed_y = -speed_y;										//bounces
 		}
 		
-		//check if hits the paddle
-		else if (ball_bottom <= PADDLE_WIDTH+PADDLE_Y	&& ( ball_right>=p.x && ball_left<=(p.x+p.length))){
+		//checks if the ball hits the left border of the paddle...(almost loss)
+		else if((ball_bottom < PADDLE_WIDTH+PADDLE_Y) && (ball_right >= p.x) && (ball_left<=p.x))
+			speed_x = -speed_x;
+		
+		//checks if the ball hits the right border of the paddle...(almost loss)
+		else if((ball_bottom < PADDLE_WIDTH+PADDLE_Y) && (ball_left <= (p.x+p.length)) && (ball_right>=(p.x+p.length)))
+			speed_x = -speed_x;
+		
+		//check if hits the paddle on its top
+		else if (ball_bottom <= PADDLE_WIDTH+PADDLE_Y	&& (ball_right>=p.x && ball_left<=(p.x+p.length))){
 			y = PADDLE_WIDTH+PADDLE_Y; 																													//put the ball again on top of the paddle
 			
 			//computes the angles of the paddle
@@ -278,12 +286,6 @@ struct Ball{
 					speed_x = -speed_x;
 			}
 		}
-		//checks if the ball hits the left border of the paddle...(almost loss)
-		else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_right >= p.x)
-			speed_x = -speed_x;
-		//checks if the ball hits the right border of the paddle...(almost loss)
-		else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_left <= (p.x+p.length))
-			speed_x = -speed_x;
 		
 		else if (y<=0){ 															//bottom of the screen...YOU LOST
 			play_music(LOSS,LOSS_DURATION);							//sad music
