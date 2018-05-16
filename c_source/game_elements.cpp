@@ -2,6 +2,7 @@
 #include "GLCD.h"
 #include "LPC17xx.h"
 #include "DAC_LPC1768.h"
+#include "cmsis_os.h"
 
 #define BRICK_LENGTH 23		
 #define BRICK_WIDTH 8
@@ -17,7 +18,10 @@
 #define PADDLE_WIDTH 10
 #define PADDLE_COLOUR White
 #define PADDLE_SPEED 1.5
-#define PADDLE_ANGLE 0.1 									//10% of the paddle
+#define PADDLE_ANGLE 0.1 //10% of the paddle
+#define PADDLE_EASY 60
+#define PADDLE_MEDIUM 40
+#define PADDLE_HARD 20
 #define INCREMENT_BALL_SPEED 1.2
 #define DECREMENT_BALL_SPEED 0.8
 
@@ -27,33 +31,29 @@
 #define BACKGROUND_COLOUR Black
 
 struct Paddle{
-	uint16_t x;
+	int16_t x;
 	uint16_t length;
 	bool going_left;
 	bool going_right;
+	bool self; 			//enables auto-mode, for debug purposes
 	
-	//constructor
-	Paddle(uint8_t diff){
-		switch(diff){
-			case 1: 														//easy level
-				length = 60;
-				x = 90;
-				break;
-			case 2: 														//medium
-				length = 40;
-				x = 100;
-				break;
-			case 3: 														//hard
-				length = 20;
-				x = 110;
-				break;
-		}
+	//constructor, easy default mode
+	Paddle() {
+		self = false;
+		set_difficulty(1);
 		going_left = false;
 		going_right = false;
+		rand_point = 0;
 	}
 	
-	//default constructor in EASY difficulty
-	Paddle() {length = 60; x = 90;}
+	/*************************Method to initialize the paddle*************************/
+	void init(uint8_t diff){
+		self = false;
+		set_difficulty(diff);
+		going_left = false;
+		going_right = false;
+		rand_point = osKernelSysTick()%length;
+	}
 	
 	/*************************Method to draw the paddle on the screen*************************/
 	void draw(){
@@ -63,8 +63,15 @@ struct Paddle{
 	}
 
 	/*************************Method to make the paddle move*************************/
-	void move(bool direction_left, bool direction_right){
-		if (direction_left == 1 && direction_right == 0){				//means right click																						
+	void move(bool direction_left, bool direction_right, int x_ball=-1){
+		if(x_ball!=-1 && self){							//automatic mode
+			x = x_ball-rand_point;
+			if (x < 0)
+				x = 0;
+			else if (x+length > SCREEN_HEIGHT)
+				x = SCREEN_HEIGHT-length;
+		}
+		if (direction_left == 1 && direction_right == 0){		//means right click																						
 			if (x == 0);																					//paddle has reached the left side of the screen...do nothing instead of moving the paddle
 			else{		
 				going_left = true;
@@ -73,7 +80,7 @@ struct Paddle{
 			}
 		}
 		else if (direction_left == 0 && direction_right == 1){	//means left click
-			if (x + length == SCREEN_HEIGHT);											//paddle has reached the right side of the screen...do nothing instead of moving the paddle
+			if (x + length == SCREEN_HEIGHT);				//paddle has reached the right side of the screen...do nothing instead of moving the paddle
 			else{
 				going_left = false;
 				going_right = true;
@@ -88,23 +95,32 @@ struct Paddle{
 	
 	void set_difficulty(uint8_t diff){
 		switch(diff){
-			case 1: 															//easy level
-				length = 60;
-				x = 90;
+			case 1: 								//easy level
+				length = PADDLE_EASY;
+				x = (SCREEN_HEIGHT-PADDLE_EASY)/2;
 				break;
-			case 2: 															//medium
-				length = 40;
-				x = 100;
+			case 2: 								//medium
+				length = PADDLE_MEDIUM;
+				x = (SCREEN_HEIGHT-PADDLE_MEDIUM)/2;
 				break;
-			case 3: 															//hard
-				length = 20;
-				x = 110;
+			case 3: 								//hard
+				length = PADDLE_HARD;
+				x = (SCREEN_HEIGHT-PADDLE_HARD)/2;
 				break;
+			case 4:								//auto
+				length = PADDLE_MEDIUM;
+				x = (SCREEN_HEIGHT-PADDLE_MEDIUM)/2;
+				self = true;
+				break;
+			default:								//error
+				length = 0;
+				x = -1;
 		}
 	}
 	
 	private:
 	uint16_t x_drawn;
+	uint16_t rand_point; 	//debug, rand_point between 0 and length
 };
 
 struct Brick{
@@ -183,9 +199,9 @@ struct Brick{
 	void draw(){
 		if (!drawn){						
 			if (hit)
-				GLCD_DrawRect(y,x,BRICK_WIDTH,BRICK_LENGTH,BACKGROUND_COLOUR);		//if the ball hits it, it is "deleted" (i.e. coloured by the background colour
+				GLCD_DrawRect(y,x,BRICK_WIDTH,BRICK_LENGTH,BACKGROUND_COLOUR);	//if the ball hits it, it is "deleted" (i.e. coloured by the background colour
 			else
-				GLCD_DrawRect(y,x,BRICK_WIDTH,BRICK_LENGTH,colour);								//if not, it is displayed
+				GLCD_DrawRect(y,x,BRICK_WIDTH,BRICK_LENGTH,colour);			//if not, it is displayed
 			drawn = true;
 		}
 	}
@@ -198,21 +214,22 @@ struct Ball{
 	double old_y;
 	double speed_x;
 	double speed_y;
-	int number_of_bricks;
 	
 	//constructor
-	Ball(double x, double y){
+	Ball(){;}
+		
+	/*************************Method to initialize the ball*******************/
+	void init(double x, double y){
 		this->x = x;
 		this->y = y;
 		speed_x = 0.5;
 		speed_y = 1.1;
-		number_of_bricks = 70;
 	}
 	
 	/*************************Method to draw the ball*************************/
 	void draw(){
 		GLCD_DrawRect(y_drawn,x_drawn,BALL_DIAMETER,BALL_DIAMETER,BACKGROUND_COLOUR); //deletes the ball of the previous cycle, before its movement
-		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);										//displays the ball after its movement
+		GLCD_DrawRect(y,x,BALL_DIAMETER,BALL_DIAMETER,BALL_COLOUR);				//displays the ball after its movement
 		x_drawn = x;
 		y_drawn = y;
 	}
@@ -223,7 +240,7 @@ struct Ball{
 		old_y = y;
 		
 		if (speed_y > BALL_MAX_SPEED) 
-			speed_y = BALL_MAX_SPEED;							//to avoid uncorrect behaviours of the ball
+			speed_y = BALL_MAX_SPEED;			//to avoid uncorrect behaviours of the ball
 		
 		x += speed_x;
 		y += speed_y;
@@ -237,17 +254,17 @@ struct Ball{
 		//check x axis
 		if (ball_right >= SCREEN_HEIGHT){ 			//right border of the screen
 			x = SCREEN_HEIGHT - BALL_DIAMETER;
-			speed_x = -speed_x;										//bounces
+			speed_x = -speed_x;				//bounces
 		}
-		else if (ball_left <= 0){ 							//left border of the screen
+		else if (ball_left <= 0){ 				//left border of the screen
 			x = 0;
-			speed_x = -speed_x;										//bounces
+			speed_x = -speed_x;				//bounces
 		}
 		
 		//check y axis
-		if (ball_top >= SCREEN_WIDTH){ 					//top border of the screen
+		if (ball_top >= SCREEN_WIDTH){ 			//top border of the screen
 			y = SCREEN_WIDTH - BALL_DIAMETER;
-			speed_y = -speed_y;										//bounces
+			speed_y = -speed_y;				//bounces
 		}
 		
 		//checks if the ball hits the left border of the paddle...(almost loss)
@@ -287,15 +304,7 @@ struct Ball{
 			}
 		}
 		
-		else if (y<=0){ 															//bottom of the screen...YOU LOST
-			play_music(LOSS,LOSS_DURATION);							//sad music
-			system_reset();															//reset of the system writing in the appropriate register
-		}
-
-		if(number_of_bricks==0){ 											//no more bricks...YOU WON
-			play_music(WIN,WIN_DURATION);								//happy music
-			system_reset();															//reset of the system writing in the appropriate register
-		}
+		else;
 	}
 	
 	/*************************Method to check the collision between ball and bricks*************************/
@@ -348,7 +357,6 @@ struct Ball{
 				speed_y = -speed_y;																								//bounces
 				brick.draw();
 				is = true;
-				number_of_bricks--;																								//decrements the number of remaining bricks
 			}
 			else if (going_dw >= 2){
 				// the ball is coming from TOP
@@ -357,7 +365,6 @@ struct Ball{
 				speed_y = -speed_y;
 				brick.draw();
 				is = true;
-				number_of_bricks--;
 			}
 			else if (going_rx >= 2){
 				// the ball is coming from LEFT
@@ -366,7 +373,6 @@ struct Ball{
 				speed_x = -speed_x;
 				brick.draw();
 				is = true;
-				number_of_bricks--;
 			}
 			else if (going_lx >= 2){
 				// the ball is coming from RIGHT
@@ -375,7 +381,6 @@ struct Ball{
 				speed_x = -speed_x;
 				brick.draw();
 				is = true;
-				number_of_bricks--;
 			}
 			
 			if (is)
@@ -383,17 +388,11 @@ struct Ball{
 		}
 		return is;
 	}
-	
-	/*************************Method to reset the whole system...regiser taken from the lpc datasheet*************************/
-	void system_reset(){
-		SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and sets SYSRESETREQ to 1
-		for(;;);																																	//waits until the system has been reset
-	}
 		
 	private:
 		double x_drawn;
 		double y_drawn;
-	  double ball_top;
+		double ball_top;
 		double ball_bottom;													
 		double ball_right;
 		double ball_left;
