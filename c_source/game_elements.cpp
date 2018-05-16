@@ -353,7 +353,6 @@ struct Ball{
 				brick.hit = true;																									//brick has ben hit
 				brick.drawn = false;																							//to make it become black
 				speed_y = -speed_y;																								//bounces
-				//brick.draw();
 				is = true;
 			}
 			else if (going_dw >= 2){
@@ -361,7 +360,6 @@ struct Ball{
 				brick.hit = true;
 				brick.drawn = false;
 				speed_y = -speed_y;
-				//brick.draw();
 				is = true;
 			}
 			else if (going_rx >= 2){
@@ -369,7 +367,6 @@ struct Ball{
 				brick.hit = true;
 				brick.drawn = false;
 				speed_x = -speed_x;
-				//brick.draw();
 				is = true;
 			}
 			else if (going_lx >= 2){
@@ -377,7 +374,6 @@ struct Ball{
 				brick.hit = true;
 				brick.drawn = false;
 				speed_x = -speed_x;
-				//brick.draw();
 				is = true;
 			}
 			
