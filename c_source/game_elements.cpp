@@ -58,7 +58,7 @@ struct Paddle{
 	/*************************Method to draw the paddle on the screen*************************/
 	void draw(){
 		GLCD_DrawRect(PADDLE_Y,x_drawn,PADDLE_WIDTH,length,BACKGROUND_COLOUR);	//cancels the paddle of the previous cycle		
-		GLCD_DrawRect(PADDLE_Y,x,PADDLE_WIDTH,length,PADDLE_COLOUR);						//displays the paddle after its movement
+		GLCD_DrawRect(PADDLE_Y,x,PADDLE_WIDTH,length,PADDLE_COLOUR);		//displays the paddle after its movement
 		x_drawn = x;
 	}
 
@@ -164,7 +164,7 @@ struct Brick{
 	//default constructor 
 	Brick() {hit = true; drawn = true; x = 0; y = 0;} //set drawn and hit, otherwise unexpected behaviour could occour (drawing or hitting it)
 	
-/*************************Method to create Bricks instances directly inside the array*************************/	
+/*************************Method to set Bricks after cration*************************/	
 	void set(uint16_t x, int16_t y){
 		this->x = x;
 		this->y = y;
@@ -235,7 +235,7 @@ struct Ball{
 	}
 	
 	//uses speed parameters to move the ball inside the screen
-	void move(Paddle p){
+	void move(const Paddle& p){
 		old_x = x;
 		old_y = y;
 		
@@ -296,17 +296,17 @@ struct Ball{
 			}
 		}
 		//checks if the ball hits the left border of the paddle...(almost loss)
-		else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_right >= p.x)
-			speed_x = -speed_x;
+		//else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_right >= p.x)
+		//	speed_x = -speed_x;
 		//checks if the ball hits the right border of the paddle...(almost loss)
-		else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_left <= (p.x+p.length))
-			speed_x = -speed_x;
+		//else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_left <= (p.x+p.length))
+		//	speed_x = -speed_x;
 		
 		else;
 	}
 	
 	/*************************Method to check the collision between ball and bricks*************************/
-	bool check_collision(Brick brick){
+	bool check_collision(Brick& brick){
 		bool is = false;																											//by default...nobody has hit anything
 		if(!brick.hit){
 			double ball_center_x = x + BALL_DIAMETER/2.0;												
@@ -319,31 +319,31 @@ struct Ball{
 			
 			
 			
-			if (is_inside(ball_left,ball_top,brick)){														//LEFT-TOP "sensor"
+			if (is_inside(ball_left,ball_top,brick)){				//LEFT-TOP "sensor"
 				going_up++;
 				going_lx++;
 			}
-			if (is_inside(ball_center_x,ball_top,brick)){ 											//CENTER-TOP "sensor"
+			if (is_inside(ball_center_x,ball_top,brick)){ 			//CENTER-TOP "sensor"
 				going_up++;
 			} 
-			if (is_inside(ball_right,ball_top,brick)){ 													//RIGHT-TOP "sensor"
+			if (is_inside(ball_right,ball_top,brick)){ 			//RIGHT-TOP "sensor"
 				going_up++;
 				going_rx++;
 			}
-			if (is_inside(ball_left,ball_center_y,brick)){ 											//LEFT-CENTER "sensor"
+			if (is_inside(ball_left,ball_center_y,brick)){ 			//LEFT-CENTER "sensor"
 				going_lx++;
 			} 
-			if (is_inside(ball_right,ball_center_y,brick)){ 										//RIGHT-CENTER "sensor"
+			if (is_inside(ball_right,ball_center_y,brick)){ 		//RIGHT-CENTER "sensor"
 				going_rx++;
 			}
-			if (is_inside(ball_left,ball_bottom,brick)){ 												//LEFT-BOTTOM "sensor"
+			if (is_inside(ball_left,ball_bottom,brick)){ 			//LEFT-BOTTOM "sensor"
 				going_lx++;
 				going_dw++;
 			} 
-			if (is_inside(ball_center_x,ball_bottom,brick)){ 										//CENTER-BOTTOM "sensor"
+			if (is_inside(ball_center_x,ball_bottom,brick)){ 		//CENTER-BOTTOM "sensor"
 				going_dw++;
 			} 
-			if (is_inside(ball_right,ball_bottom,brick)){ 											//RIGHT-BOTTOM "sensor"
+			if (is_inside(ball_right,ball_bottom,brick)){ 			//RIGHT-BOTTOM "sensor"
 				going_rx++;
 				going_dw++;
 			}
@@ -353,7 +353,7 @@ struct Ball{
 				brick.hit = true;																									//brick has ben hit
 				brick.drawn = false;																							//to make it become black
 				speed_y = -speed_y;																								//bounces
-				brick.draw();
+				//brick.draw();
 				is = true;
 			}
 			else if (going_dw >= 2){
@@ -361,7 +361,7 @@ struct Ball{
 				brick.hit = true;
 				brick.drawn = false;
 				speed_y = -speed_y;
-				brick.draw();
+				//brick.draw();
 				is = true;
 			}
 			else if (going_rx >= 2){
@@ -369,7 +369,7 @@ struct Ball{
 				brick.hit = true;
 				brick.drawn = false;
 				speed_x = -speed_x;
-				brick.draw();
+				//brick.draw();
 				is = true;
 			}
 			else if (going_lx >= 2){
@@ -377,7 +377,7 @@ struct Ball{
 				brick.hit = true;
 				brick.drawn = false;
 				speed_x = -speed_x;
-				brick.draw();
+				//brick.draw();
 				is = true;
 			}
 			
@@ -396,7 +396,7 @@ struct Ball{
 		double ball_left;
 		
 		//checks if (x,y) is inside a brick
-		bool is_inside(double x, double y, Brick brick){
+		bool is_inside(double x, double y, const Brick& brick){
 			if (x >= brick.x && x <= brick.x+BRICK_LENGTH)
 				if (y >= brick.y && y < brick.y+BRICK_WIDTH)
 					return true;
@@ -404,7 +404,7 @@ struct Ball{
 		}
 		
 		//from the point of view of the ball, checks if the upper side of the ball is inside a brick
-		bool collision_up(Brick brick){
+		bool collision_up(const Brick& brick){
 			if (brick.y <= ball_top)
 				if (brick.y+BRICK_WIDTH >= ball_top)
 					if (brick.x <= ball_right)
@@ -413,7 +413,7 @@ struct Ball{
 			return false;
 		}
 		//from the point of view of the ball, checks if the lower side of the ball is inside a brick
-		bool collision_down(Brick brick){
+		bool collision_down(const Brick& brick){
 			if (brick.y <= ball_bottom)
 				if (ball_bottom <= brick.y+BRICK_WIDTH)
 					if (brick.x <= ball_right)
@@ -422,7 +422,7 @@ struct Ball{
 			return false;
 		}
 		//from the point of view of the ball, checks if the left side of the ball is inside a brick
-		bool collision_left(Brick brick){
+		bool collision_left(const Brick& brick){
 			if (brick.y <= ball_top)
 				if (ball_bottom <= brick.y+BRICK_WIDTH)
 					if (brick.x <= ball_left)
@@ -431,7 +431,7 @@ struct Ball{
 			return false;
 		}
 		//from the point of view of the ball, checks if the right side of the ball is inside a brick
-		bool collision_right(Brick brick){
+		bool collision_right(const Brick& brick){
 			if (brick.y <= ball_top)
 				if (ball_bottom <= brick.y+BRICK_WIDTH)
 					if (brick.x <= ball_right)
