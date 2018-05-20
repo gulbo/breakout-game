@@ -7,6 +7,8 @@
 #include "PIN_LPC17xx.h"
 #include "DAC_LPC1768.h"
 
+//#define DEBUG
+
 #define BRICK_LINE_HEIGHT_BEGINNING 270		//it leaves 50 pixel from the higher border of the screen to the first line of bricks
 #define END_OF_LINES 1302				//add 186 to increase the #rows by 1, subtract 186 to decrease the #rows by 1.......CURRENTLY 7 ROWS
 #define BRICK_LINE_LENGTH_END	241					
@@ -74,10 +76,13 @@ void GameInitialization(){
 	total_hits = 0;
 	int8_t difficulty = -1;
 	GLCD_Clear(Black);				//LCD black while waiting for the difficulty
-	if (pad.self) 					//debug mode
+	#ifdef DEBUG					//debug mode
+	difficulty = 4;
+	#endif
+	if (pad.self) 					//if not a cold start, but playing in auto-mode, don't ask the diff
 		difficulty = 4;
 	while(difficulty == -1){			//difficulty not selected. As soon as it is selected, the game starts
-		delay(20);
+		delay(20);					//delay to permit pressing multiple-bottons 
 		if(button1_click())			//BUTTON1 for easy
 			difficulty = 1;
 		else if(button2_click())		//BUTTON2 for medium
@@ -124,17 +129,15 @@ void game(void const *argument){
 		ball.move(pad);
 		int i;
 		int loop_hits = 0;
-		for(i=0; i<70 && loop_hits<3; i++){						//every execution of the method, it checks if the ball touches
-			bool checked = ball.check_collision(bricks_array[i]);		//1 of the 70 bricks; if yes, hit is set to true and will be used
-			if(checked){								//to change its color (i.e. to break it)
-				bricks_array[i].hit = true;
+		for(i=0; i<70 && loop_hits<3; i++){					//every execution of the method, it checks if the ball touches
+			if(ball.check_collision(bricks_array[i])){		//one of the 70 bricks
 				loop_hits++;
 				total_hits++;
 			}
 		}
-		uint32_t direction_left = Button_GetState(0);				//checks if the paddle goes left
-		uint32_t direction_right = Button_GetState(1);				//checks if the paddle goes right
-		pad.move(direction_left,direction_right, ball.x);			//to make the paddle move in the directon wanted
+		uint32_t direction_left = Button_GetState(0);			//checks if the paddle goes left
+		uint32_t direction_right = Button_GetState(1);			//checks if the paddle goes right
+		pad.move(direction_left,direction_right, ball.x);		//to make the paddle move in the directon wanted
 		
 		//check win or loss
 		if (ball.y <= 0){ 						//bottom of the screen...YOU LOST
@@ -153,12 +156,16 @@ void game(void const *argument){
 	}
 }
 
-/*************************Method for the representation on screen of the elements of the game. It's attached to the tid_screen thread*************************/
+/******Method for the representation on screen of the elements of the game.
+*******It's attached to the tid_screen thread*****************************/
 void refresh_screen(void const *argument){					
 	for(;;){
 		osMutexWait(game_mutex_id,0);
-		ball.draw();																											//displays the ball
-		pad.draw();																												//displays the paddle
+		ball.draw();					//displays the ball
+		pad.draw();						//displays the paddle
+		int i;
+		for(i=0; i<70; i++)	 	//displays the bricks (if modified)
+			bricks_array[i].draw();
 		osMutexRelease(game_mutex_id);
 		osDelay(SCREEN_DELAY);
 	}
