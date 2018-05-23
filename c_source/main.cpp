@@ -64,11 +64,94 @@ inline bool allButtons_click(){
 		return false;
 }
 
+inline unsigned int strlen(char* s){
+	unsigned int i = 0;
+	while(*s){
+		i++;
+		s++;
+	}
+	return i;
+}
+
+struct Button{
+	const char* name;
+	unsigned int x;
+	unsigned int y;
+	unsigned int text_color;
+	unsigned int button_color;
+		
+	//constructor
+	Button(const char* s, const int p_x, const int p_y) : x(p_x), y(p_y){
+		name = s;
+		if (p_x == -1)    //automatically centre
+			centre_h();
+		select(false);
+	}
+	
+	void set_colors(unsigned int but, unsigned int tex){
+		text_color = tex;
+		button_color = but;
+	}
+	
+	void select(bool x){
+		if(x){
+			text_color = Blue;
+			button_color = Yellow;
+		}
+		else{
+			text_color = Black;
+			button_color = (Yellow+White)/2;
+		}
+	}
+	void draw(){
+		GLCD_SetTextColor(text_color);			
+		GLCD_SetBackColor(button_color);
+		GLCD_DisplayString(SCREEN_WIDTH-y-CHAR1_HEIGHT,x,1,(unsigned char*)name,PIXELS);
+	}
+	
+	void centre_h(){
+		unsigned int button_width = strlen((char*)name) * CHAR1_WIDTH; //num of pixels occupied
+		x = (SCREEN_HEIGHT-button_width) / 2;
+	}
+	
+};
 
 /*************************Method to reset the whole system...regiser taken from the lpc datasheet*************************/
 void system_reset(){
 	SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and sets SYSRESETREQ to 1
 	for(;;);																																	//waits until the system has been reset
+}
+
+bool button1_click_new(){
+	static uint32_t state = 0;
+	uint32_t  new_state = Button_GetState(0);
+	if (state != new_state){
+		if (new_state == 1){ //button clicked
+			state = new_state;
+			return true;
+		}
+		else{  		//unclick of the button
+			state = new_state;
+			return false;
+		}	
+	}
+	return false; //in case of no change of state
+}
+
+bool button2_click_new(){
+	static uint32_t state = 0;
+	uint32_t  new_state = Button_GetState(1);
+	if (state != new_state){
+		if (new_state == 1){ //button clicked
+			state = new_state;
+			return true;
+		}
+		else{  		//unclick of the button
+			state = new_state;
+			return false;
+		}	
+	}
+	return false; //in case of no change of state
 }
 
 /*************************Initialization of the game*************************/
@@ -79,20 +162,46 @@ void GameInitialization(){
 	#ifdef DEBUG					//debug mode
 	difficulty = 4;
 	#endif
-	if (pad.self) 					//if not a cold start, but playing in auto-mode, don't ask the diff
+	if (pad.self) 					//if not a cold start, but playing in auto-mode, don't ask the diffic
 		difficulty = 4;
+	Button* arr[3];
+	Button b0("    EASY    ",-1,180);		
+	Button b1("   MEDIUM   ",-1,140);
+	Button b2("    HARD    ",-1,100);
+	
+	arr[0]=&b0; arr[1]=&b1; arr[2]=&b2;		//save the buttons in an array
+	int selected = 1;					//medium default selected
+	arr[selected]->select(true);
+	b0.draw(); b1.draw(); b2.draw();		//draw all the buttons
 	while(difficulty == -1){			//difficulty not selected. As soon as it is selected, the game starts
-		delay(20);					//delay to permit pressing multiple-bottons 
-		if(button1_click())			//BUTTON1 for easy
-			difficulty = 1;
-		else if(button2_click())		//BUTTON2 for medium
-			difficulty = 2;
-		else if(button3_click())		//BUTTON3 for hard
-			difficulty = 3;
-		else if (allButtons_click())		//all buttons for automatic mode
+		delay(10);
+		if(button1_click_new()){			//UP
+			arr[selected]->select(false);
+			arr[selected]->draw();
+			selected--;
+		}
+		else if (button2_click_new()){		//DOWN
+			arr[selected]->select(false);
+			arr[selected]->draw();
+			selected++;
+		}
+		else if (button3_click()){		//CLICK
+			difficulty = selected+1;	//difficulty from 1 to 3
+		}
+		else if (allButtons_click()){		//all buttons for automatic mode
 			difficulty = 4;
-		
+		}
+		if (selected < 0)
+			selected = 0;
+		else if (selected > 2)
+			selected = 2;
+		arr[selected]->select(true);
+		arr[selected]->draw();
 	}
+		//else if (allButtons_click())		
+		//	difficulty = 4;
+	
+	GLCD_Clear(Black);
 	pad.init(difficulty);								//set the size of the paddle
 	pad.draw();										//draw the paddle
 	ball.init(POSITION_TO_CENTRE_BALL,BEGINNING_OF_FALLING_BALL);	//set the position of the ball

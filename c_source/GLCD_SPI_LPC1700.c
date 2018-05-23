@@ -17,7 +17,7 @@
 
 /*********************** Hardware specific configuration **********************/
 
-#define HORIZONTAL 1
+#define VERTICAL 1
 
 /* 8bit to 16bit LCD Interface 
    
@@ -562,7 +562,7 @@ void GLCD_SetWindow (unsigned int x, unsigned int y, unsigned int w, unsigned in
 
 void GLCD_WindowMax (void) {
  
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
   GLCD_SetWindow (0, 0, SCREEN_HEIGHT, SCREEN_WIDTH);
 #else
   GLCD_SetWindow (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -581,7 +581,7 @@ void GLCD_PutPixel (unsigned int x, unsigned int y) {
 
   if(driverCode==0x8989)
   {
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
   	wr_reg(0x4e, y);
   	wr_reg(0x4f, SCREEN_WIDTH-1-x);
 #else
@@ -591,7 +591,7 @@ void GLCD_PutPixel (unsigned int x, unsigned int y) {
   }
   else
   {	 
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
   	wr_reg(0x20, y);
   	wr_reg(0x21, SCREEN_WIDTH-1-x);
 #else
@@ -671,32 +671,30 @@ void GLCD_Clear (unsigned short color) {
 *******************************************************************************/
 
 void GLCD_DrawChar_U8 (unsigned int x, unsigned int y, unsigned int cw, unsigned int ch, unsigned char *c) {
-  int idx = 0, i, j;
-
-#if (HORIZONTAL == 1)
+  int i, j;
+#if (VERTICAL == 1)
+  GLCD_SetWindow(x, y, cw, ch);
+#else
   x = SCREEN_WIDTH-x-cw;
   GLCD_SetWindow(y, x, ch, cw);
-#else
-  GLCD_SetWindow(x, y, cw, ch);
 #endif
 
   LCD_CS(0)
   wr_cmd(0x22);
   wr_dat_start();
-  for (j = 0; j < ch; j++) {
-#if (HORIZONTAL == 1)
-    for (i = cw-1; i >= 0; i--) {
+#if (VERTICAL == 1)
+	for (i = 0; i < cw; i++) {		
+		for (j = 0; j < ch; j++) {
 #else
-    for (i = 0; i <= cw-1; i++) {
+	for (j = 0; j < ch; j++) {
+		for (i = cw-1; i >= 0; i--) {
 #endif
-      if((c[idx] & (1 << i)) == 0x00) {
-        wr_dat_only(BackColor);
-      } else {
-        wr_dat_only(TextColor);
-      }
-    }
-    c++;
-  }
+			if((c[j] & (1 << i)) == 0x00)
+				wr_dat_only(BackColor);		
+			else					
+				wr_dat_only(TextColor);		
+		}
+	}
   wr_dat_stop();
 }
 
@@ -713,32 +711,30 @@ void GLCD_DrawChar_U8 (unsigned int x, unsigned int y, unsigned int cw, unsigned
 *******************************************************************************/
 
 void GLCD_DrawChar_U16 (unsigned int x, unsigned int y, unsigned int cw, unsigned int ch, unsigned short *c) {
-  int idx = 0, i, j;
-
-#if (HORIZONTAL == 1)
+  int i, j;
+#if (VERTICAL == 1)
+  GLCD_SetWindow(x, y, cw, ch);
+#else
   x = SCREEN_WIDTH-x-cw;
   GLCD_SetWindow(y, x, ch, cw);
-#else
-  GLCD_SetWindow(x, y, cw, ch);
 #endif
 
   LCD_CS(0)
   wr_cmd(0x22);
   wr_dat_start();
-  for (j = 0; j < ch; j++) {
-#if (HORIZONTAL == 1)
-    for (i = cw-1; i >= 0; i--) {
+#if (VERTICAL == 1)
+	for (i = 0; i < cw; i++) {		
+		for (j = 0; j < ch; j++) {
 #else
-    for (i = 0; i <= cw-1; i++) {
+	for (j = 0; j < ch; j++) {
+		for (i = cw-1; i >= 0; i--) {
 #endif
-      if((c[idx] & (1 << i)) == 0x00) {
-        wr_dat_only(BackColor);
-      } else {
-        wr_dat_only(TextColor);
-      }
-    }
-    c++;
-  }
+			if((c[j] & (1 << i)) == 0x00)
+				wr_dat_only(BackColor);		
+			else					
+				wr_dat_only(TextColor);		
+		}
+	}
   wr_dat_stop();
 }
 
@@ -751,15 +747,21 @@ void GLCD_DrawChar_U16 (unsigned int x, unsigned int y, unsigned int cw, unsigne
 *   Return:                                                                    *
 *******************************************************************************/
 
-void GLCD_DisplayChar (unsigned int ln, unsigned int col, unsigned char fi, unsigned char c) {
+void GLCD_DisplayChar (unsigned int ln, unsigned int col, unsigned char fi, unsigned char c, unsigned char pixels) {
 
   c -= 32;
   switch (fi) {
     case 0:  /* Font 6 x 8 */
-      GLCD_DrawChar_U8 (col *  6, ln *  8,  6,  8, (unsigned char  *)&Font_6x8_h  [c * 8]);
+	if (!pixels)
+		GLCD_DrawChar_U8 (col *  6, ln *  8,  6,  8, (unsigned char  *)&Font_6x8_h  [c * 8]);
+	else
+		GLCD_DrawChar_U8 (col, ln,  6,  8, (unsigned char  *)&Font_6x8_h  [c * 8]);
       break;
     case 1:  /* Font 16 x 24 */
-      GLCD_DrawChar_U16(col * 16, ln * 24, 16, 24, (unsigned short *)&Font_16x24_h[c * 24]);
+	if (!pixels)
+		GLCD_DrawChar_U16(col * 16, ln * 24, 16, 24, (unsigned short *)&Font_16x24_h[c * 24]);
+	else
+		GLCD_DrawChar_U16(col, ln, 16, 24, (unsigned short *)&Font_16x24_h[c * 24]);
       break;
   }
 }
@@ -774,12 +776,28 @@ void GLCD_DisplayChar (unsigned int ln, unsigned int col, unsigned char fi, unsi
 *   Return:                                                                    *
 *******************************************************************************/
 
-void GLCD_DisplayString (unsigned int ln, unsigned int col, unsigned char fi, unsigned char *s) {
+void GLCD_DisplayString (unsigned int ln, unsigned int col, unsigned char fi, unsigned char *s, unsigned char pixels) {
 
-  GLCD_WindowMax();
-  while (*s) {
-    GLCD_DisplayChar(ln, col++, fi, *s++);
-  }
+	GLCD_WindowMax();
+	if(pixels){      //if position given with pixels
+		switch (fi) {
+			case 0:  /* Font 6 x 8 */
+				while (*s) {
+					GLCD_DisplayChar(ln, col, fi, *s++, pixels);
+					col+=8; //next column
+				}
+				break;
+			case 1:  /* Font 16 x 24 */
+				while (*s) {
+					GLCD_DisplayChar(ln, col, fi, *s++, pixels);
+					col+=16; //next column
+				}
+				break;
+		}
+	}
+	else            //position given with rows and columns
+		while (*s)
+			GLCD_DisplayChar(ln, col++, fi, *s++, pixels);
 }
 
 
@@ -807,7 +825,7 @@ void GLCD_ClearLn (unsigned int ln, unsigned char fi) {
       buf[i+1] = 0;
       break;
   }
-  GLCD_DisplayString (ln, 0, fi, buf);
+  GLCD_DisplayString (ln, 0, fi, buf,LINES);
 }
 
 /*******************************************************************************
@@ -823,7 +841,7 @@ void GLCD_Bargraph (unsigned int x, unsigned int y, unsigned int w, unsigned int
   int i,j;
 
   val = (val * w) >> 10;                /* Scale value                        */
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
   x = SCREEN_WIDTH-x-w;
   GLCD_SetWindow(y, x, h, w);
 #else
@@ -834,7 +852,7 @@ void GLCD_Bargraph (unsigned int x, unsigned int y, unsigned int w, unsigned int
   wr_cmd(0x22);
   wr_dat_start();
   for (i = 0; i < h; i++) {
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
     for (j = w-1; j >= 0; j--) {
 #else
     for (j = 0; j <= w-1; j++) {
@@ -865,7 +883,7 @@ void GLCD_Bitmap (unsigned int x, unsigned int y, unsigned int w, unsigned int h
   unsigned int    i, j;
   unsigned short *bitmap_ptr = (unsigned short *)bitmap;
 
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
   x = SCREEN_WIDTH-x-w;
   GLCD_SetWindow(y, x, h, w);
 #else
@@ -876,7 +894,7 @@ void GLCD_Bitmap (unsigned int x, unsigned int y, unsigned int w, unsigned int h
   wr_cmd(0x22);
   wr_dat_start();
   for (j = 0; j < h; j++) {
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
     for (i = 0; i < w; i++) {
       wr_dat_only(*bitmap_ptr++);
     }
@@ -908,7 +926,7 @@ void GLCD_Bmp (unsigned int x, unsigned int y, unsigned int w, unsigned int h, u
   unsigned int    i, j;
   unsigned short *bitmap_ptr = (unsigned short *)bmp;
 
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
   x = SCREEN_WIDTH-x-w;
   GLCD_SetWindow(y, x, h, w);
 #else
@@ -918,7 +936,7 @@ void GLCD_Bmp (unsigned int x, unsigned int y, unsigned int w, unsigned int h, u
   LCD_CS(0)
   wr_cmd(0x22);
   wr_dat_start();
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
   bitmap_ptr += (h*w)-1;
   for (j = 0; j < h; j++) {
     for (i = 0; i < w; i++) {
@@ -945,7 +963,7 @@ void GLCD_Bmp (unsigned int x, unsigned int y, unsigned int w, unsigned int h, u
 *******************************************************************************/
 
 void GLCD_ScrollVertical (unsigned int dy) {
-#if (HORIZONTAL == 0)
+#if (VERTICAL == 0)
   static unsigned int y = 0;
 
   y = y + dy;
@@ -969,7 +987,7 @@ void GLCD_ScrollVertical (unsigned int dy) {
 void GLCD_DrawRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, short color){
 	int i,j;
 
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
   x = SCREEN_WIDTH-x-w;
   GLCD_SetWindow(y, x, h, w);
 #else
@@ -980,7 +998,7 @@ void GLCD_DrawRect(unsigned int x, unsigned int y, unsigned int w, unsigned int 
   wr_cmd(0x22);
   wr_dat_start();
   for (i = 0; i < h; i++) {
-#if (HORIZONTAL == 1)
+#if (VERTICAL == 1)
     for (j = w-1; j >= 0; j--) {
 #else
     for (j = 0; j <= w-1; j++) {

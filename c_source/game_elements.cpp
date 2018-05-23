@@ -18,7 +18,7 @@
 #define PADDLE_WIDTH 10
 #define PADDLE_COLOUR White
 #define PADDLE_SPEED 1.5
-#define PADDLE_ANGLE 0.1 //10% of the paddle
+#define PADDLE_ANGLE 0.15 //15% of the paddle
 #define PADDLE_EASY 60
 #define PADDLE_MEDIUM 40
 #define PADDLE_HARD 20
