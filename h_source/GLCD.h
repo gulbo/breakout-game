@@ -61,6 +61,15 @@ extern "C" {
 #define BPP         16                  /* Bits per pixel                     */
 #define BYPP        ((BPP+7)/8)         /* Bytes per pixel                    */
 
+//used for drawchar and drawstring
+#define PIXELS 1
+#define LINES 0
+
+//dimensions
+#define CHAR1_WIDTH 16
+#define CHAR1_HEIGHT 24
+#define CHAR0_WIDTH 6
+#define CHAR0_HEIGHT 8
 extern void delay 							(int cnt) ;
 extern void GLCD_Init           (void);
 extern void GLCD_WindowMax      (void);
@@ -69,8 +78,8 @@ extern void GLCD_SetTextColor   (unsigned short color);
 extern void GLCD_SetBackColor   (unsigned short color);
 extern void GLCD_Clear          (unsigned short color);
 extern void GLCD_DrawChar       (unsigned int x, unsigned int y, unsigned short *c);
-extern void GLCD_DisplayChar    (unsigned int ln, unsigned int col, unsigned char fi, unsigned char  c);
-extern void GLCD_DisplayString  (unsigned int ln, unsigned int col, unsigned char fi, unsigned char *s);
+extern void GLCD_DisplayChar    (unsigned int ln, unsigned int col, unsigned char fi, unsigned char  c, unsigned char pixels);
+extern void GLCD_DisplayString  (unsigned int ln, unsigned int col, unsigned char fi, unsigned char *s, unsigned char pixels);
 extern void GLCD_ClearLn        (unsigned int ln, unsigned char fi);
 extern void GLCD_Bargraph       (unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int val);
 extern void GLCD_Bitmap         (unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned char *bitmap);
