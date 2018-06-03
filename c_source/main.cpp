@@ -34,6 +34,7 @@ Paddle pad;
 Ball ball;
 Brick bricks_array[70];
 uint16_t total_hits; 	//shows total number of bricks hit
+uint32_t total_score = 0;
 
 /*************************Methods used to check the click of a button*************************/
 inline bool button1_click(){
@@ -154,6 +155,45 @@ bool button2_click_new(){
 	return false; //in case of no change of state
 }
 
+void Explosion(uint16_t y, uint16_t x, uint16_t dim){				
+	for(int d=1; d<=3; d++){
+		GLCD_DrawRect(x-dim*d,y-dim*d,dim,dim,White);
+		GLCD_DrawRect(x-dim*d,y+dim*(d-1),dim,dim,White);
+		GLCD_DrawRect(x+dim*(d-1),y-dim*d,dim,dim,White);
+		GLCD_DrawRect(x+dim*(d-1),y+dim*(d-1),dim,dim,White);
+		delay(3);
+		GLCD_DrawRect(x-dim*d,y-dim*d,dim,dim,Black);
+		GLCD_DrawRect(x-dim*d,y+dim*(d-1),dim,dim,Black);
+		GLCD_DrawRect(x+dim*(d-1),y-dim*d,dim,dim,Black);
+		GLCD_DrawRect(x+dim*(d-1),y+dim*(d-1),dim,dim,Black);
+	}
+}
+void Introduction(){
+	
+	uint16_t i = 228;
+	uint16_t j = 170;
+	GLCD_DrawRect((SCREEN_WIDTH-20)/3,(SCREEN_HEIGHT-60)/2, 20, 60, Yellow);
+	while(j>=62){
+		GLCD_DrawRect(i,j,8,8,Red);
+		delay(2);
+		GLCD_DrawRect(i,j,8,8,Black);
+		j--;
+		if(j>=116){
+			i=i-2;
+		}else{
+			i=i+2;
+		}
+	}
+	GLCD_Clear(Black);
+	Explosion(j,i,3);
+	GLCD_DisplayString(SCREEN_WIDTH-200,(SCREEN_HEIGHT-13*CHAR1_WIDTH)/2,1,(unsigned char*)"BREAKOUT GAME",PIXELS);
+	GLCD_DisplayString(SCREEN_WIDTH-100,(SCREEN_HEIGHT-12*CHAR0_HEIGHT)/2,0,(unsigned char*)"Developed by",PIXELS);
+	GLCD_DisplayString(SCREEN_WIDTH-CHAR0_HEIGHT,0,0,(unsigned char*)"Andrea Gulberti",PIXELS);
+	GLCD_DisplayString(SCREEN_WIDTH-CHAR0_HEIGHT,SCREEN_HEIGHT-11*CHAR0_HEIGHT,0,(unsigned char*)"Simone Fini",PIXELS);
+	delay(500);
+	GLCD_Clear(Black);
+}
+
 /*************************Initialization of the game*************************/
 void GameInitialization(){
 	total_hits = 0;
@@ -164,6 +204,7 @@ void GameInitialization(){
 	#endif
 	if (pad.self) 					//if not a cold start, but playing in auto-mode, don't ask the diffic
 		difficulty = 4;
+	Introduction();
 	Button* arr[3];
 	Button b0("    EASY    ",-1,180);		
 	Button b1("   MEDIUM   ",-1,140);
@@ -232,7 +273,7 @@ void GameInitialization(){
 }
 
 /*************************Method for the execution of the game. It's attached to the tid_game thread*************************/
-void game(void const *argument){										
+void game(void const *argument){		
 	for(;;){
 		osMutexWait(game_mutex_id,0);
 		ball.move(pad);
@@ -244,6 +285,7 @@ void game(void const *argument){
 				total_hits++;
 			}
 		}
+		total_score=(total_score+1)%10;										//update the score to be diplayed
 		uint32_t direction_left = Button_GetState(0);			//checks if the paddle goes left
 		uint32_t direction_right = Button_GetState(1);			//checks if the paddle goes right
 		pad.move(direction_left,direction_right, ball.x);		//to make the paddle move in the directon wanted
@@ -275,6 +317,7 @@ void refresh_screen(void const *argument){
 		int i;
 		for(i=0; i<70; i++)	 	//displays the bricks (if modified)
 			bricks_array[i].draw();
+		
 		osMutexRelease(game_mutex_id);
 		osDelay(SCREEN_DELAY);
 	}
