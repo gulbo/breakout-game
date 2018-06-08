@@ -637,7 +637,8 @@ void GLCD_SetBackColor (unsigned short color) {
 *******************************************************************************/
 
 void GLCD_Clear (unsigned short color) {
-  unsigned int i;
+  GLCD_DrawRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT,color);
+  /*unsigned int i;
 
   GLCD_WindowMax();
 
@@ -656,7 +657,7 @@ void GLCD_Clear (unsigned short color) {
   wr_dat_start();
   for(i = 0; i < (SCREEN_WIDTH*SCREEN_HEIGHT); i++)
     wr_dat_only(color);
-  wr_dat_stop();
+  wr_dat_stop();*/
 }
 
 

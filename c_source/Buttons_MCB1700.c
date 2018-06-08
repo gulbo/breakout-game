@@ -101,13 +101,13 @@ int32_t Buttons_Uninitialize (void) {
   \returns     Buttons state
 */
 uint32_t Button_GetState (int n) {		//n must be included between 0 and 2, indicating button1, button2, button3
-  
+
 	uint32_t val;
-  val = 0;
-  if (!(GPIO_PinRead (BUTTON_PIN[n].Portnum, BUTTON_PIN[n].Pinnum))) 
+	val = 0;
+	if (!(GPIO_PinRead (BUTTON_PIN[n].Portnum, BUTTON_PIN[n].Pinnum))) 
 		val = 1;
 
-  return val;
+	return val;
 }
 
 /**

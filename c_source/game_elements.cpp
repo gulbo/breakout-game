@@ -18,7 +18,7 @@
 #define PADDLE_WIDTH 10
 #define PADDLE_COLOUR White
 #define PADDLE_SPEED 1.5
-#define PADDLE_ANGLE 0.15 //15% of the paddle
+#define PADDLE_ANGLE 0.1 //10% of the paddle
 #define PADDLE_EASY 60
 #define PADDLE_MEDIUM 40
 #define PADDLE_HARD 20
@@ -31,19 +31,19 @@
 #define BACKGROUND_COLOUR Black
 
 struct Paddle{
-	int16_t x;
+	float x;
 	uint16_t length;
 	bool going_left;
 	bool going_right;
 	bool self; 			//enables auto-mode, for debug purposes
 	
-	//constructor, easy default mode
+	//constructor, easy default mode, use init() instead
 	Paddle() {
-		self = false;
-		set_difficulty(1);
-		going_left = false;
-		going_right = false;
-		rand_point = 0;
+		//self = false;
+		//set_difficulty(1);
+		//going_left = false;
+		//going_right = false;
+		//rand_point = 0;
 	}
 	
 	/*************************Method to initialize the paddle*************************/
@@ -66,21 +66,29 @@ struct Paddle{
 	void move(bool direction_left, bool direction_right, int x_ball=-1){
 		if(x_ball!=-1 && self){							//automatic mode
 			x = x_ball-rand_point;
-			if (x < 0)
+			if (x <= 0)
 				x = 0;
 			else if (x+length > SCREEN_HEIGHT)
 				x = SCREEN_HEIGHT-length;
 		}
-		if (direction_left == 1 && direction_right == 0){		//means right click																						
-			if (x == 0);																					//paddle has reached the left side of the screen...do nothing instead of moving the paddle
+		if (direction_left == 1 && direction_right == 0){		//means left click																						
+			if (x <= 0){				//paddle has reached the left side of the screen...do nothing instead of moving the paddle
+				going_left = false;
+				going_right = false;
+				x = 0;
+			}
 			else{		
 				going_left = true;
 				going_right = false;
-				x -= PADDLE_SPEED;
+				x -= PADDLE_SPEED;//*0.65;		//GPIO read problem, coefficient to fix it
 			}
 		}
-		else if (direction_left == 0 && direction_right == 1){	//means left click
-			if (x + length == SCREEN_HEIGHT);				//paddle has reached the right side of the screen...do nothing instead of moving the paddle
+		else if (direction_left == 0 && direction_right == 1){	//means right click
+			if (x + length >= SCREEN_HEIGHT){				//paddle has reached the right side of the screen...do nothing instead of moving the paddle
+				going_left = false;																		//in case both buttons were pressed
+				going_right = false;
+				x = SCREEN_HEIGHT-length;
+			}
 			else{
 				going_left = false;
 				going_right = true;
@@ -269,7 +277,7 @@ struct Ball{
 		
 		//check if hits the paddle
 		else if (ball_bottom <= PADDLE_WIDTH+PADDLE_Y	&& ( ball_right>=p.x && ball_left<=(p.x+p.length))){
-			y = PADDLE_WIDTH+PADDLE_Y; 																													//put the ball again on top of the paddle
+			y = PADDLE_WIDTH+PADDLE_Y; 											//put the ball again on top of the paddle
 			
 			//computes the angles of the paddle
 			double left_angle = p.x + p.length * PADDLE_ANGLE;																	
@@ -277,32 +285,24 @@ struct Ball{
 			
 			//if the paddle goes in the opposit direction of the ball...
 			if((p.going_left==true && speed_x<0) || (p.going_right==true && speed_x>0))
-				speed_y = -DECREMENT_BALL_SPEED * speed_y;																				//decreases the speed
+				speed_y = -DECREMENT_BALL_SPEED * speed_y;						//decreases the speed
 			
 			//... or if it goes in the same direction
 			else if((p.going_left==true && speed_x>0) || (p.going_right==true && speed_x<0))
-				speed_y = -INCREMENT_BALL_SPEED * speed_y;																				//increase the speed
+				speed_y = -INCREMENT_BALL_SPEED * speed_y;						//increase the speed
 			else 
-				speed_y = -speed_y;																																//just bounces on the paddle
+				speed_y = -speed_y;										//just bounces on the paddle
 			
 			//check the angles
-			if (ball_right <= left_angle){ 																											//forces ball to go to LEFT
+			if (ball_right <= left_angle ){ 							//forces ball to go to LEFT
 				if (speed_x > 0)
 					speed_x = -speed_x;
 			}
-			else if (ball_left >= right_angle){ 																								//force ball to go to RIGHT
+			else if (ball_left >= right_angle){ 							//force ball to go to RIGHT
 				if (speed_x < 0)
 					speed_x = -speed_x;
 			}
-		}
-		//checks if the ball hits the left border of the paddle...(almost loss)
-		//else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_right >= p.x)
-		//	speed_x = -speed_x;
-		//checks if the ball hits the right border of the paddle...(almost loss)
-		//else if(ball_bottom < PADDLE_WIDTH+PADDLE_Y && ball_left <= (p.x+p.length))
-		//	speed_x = -speed_x;
-		
-		else;
+		}		
 	}
 	
 	/*************************Method to check the collision between ball and bricks*************************/
@@ -399,6 +399,7 @@ struct Ball{
 			return false;
 		}
 		
+		/***OLD FUNCTIONS, NOT USED ***
 		//from the point of view of the ball, checks if the upper side of the ball is inside a brick
 		bool collision_up(const Brick& brick){
 			if (brick.y <= ball_top)
@@ -435,4 +436,5 @@ struct Ball{
 							return true;
 			return false;
 		}
+		*/
 };

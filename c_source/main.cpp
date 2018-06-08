@@ -21,33 +21,58 @@
 								
 #define SOUND_DELAY	1000				//40us -> 25Khz sound
 
+#define EASY 1						//difficulty
+#define MEDIUM 2
+#define HARD 3
+#define AUTO 4
+
 //RTOS threads
 osThreadId tid_screen;  				//thread for the refresh of the screen
 osThreadId tid_game;					//thread for the game execution
 
 //RTOS mutex
-osMutexDef (game_mutex); // Declare mutex
-osMutexId game_mutex_id; // Mutex ID
+osMutexDef (game_mutex); 				// Declare mutex
+osMutexId game_mutex_id; 				// Mutex ID
 
 //global objects/variables to be used in different methods
 Paddle pad;
 Ball ball;
 Brick bricks_array[70];
-uint16_t total_hits; 	//shows total number of bricks hit
-
+int8_t difficulty;
+uint16_t total_hits; 					//shows total number of bricks hit
+uint64_t game_points;					//points of the game
+bool init=false;
 /*************************Methods used to check the click of a button*************************/
-inline bool button1_click(){
-	if (Button_GetState(0) == 1 && Button_GetState(1) == 0 && Button_GetState(2) == 0)
-		return true;
-	else
-		return false;
+bool button1_click(){
+	static uint32_t state = 0;
+	uint32_t  new_state = Button_GetState(0);
+	if (state != new_state){
+		if (new_state == 1){ //button clicked
+			state = new_state;
+			return true;
+		}
+		else{  		//unclick of the button
+			state = new_state;
+			return false;
+		}	
+	}
+	return false; //in case of no change of state
 }
 
-inline bool button2_click(){
-	if (Button_GetState(0) == 0 && Button_GetState(1) == 1 && Button_GetState(2) == 0)
-		return true;
-	else
-		return false;
+bool button2_click(){
+	static uint32_t state = 0;
+	uint32_t  new_state = Button_GetState(1);
+	if (state != new_state){
+		if (new_state == 1){ //button clicked
+			state = new_state;
+			return true;
+		}
+		else{  		//unclick of the button
+			state = new_state;
+			return false;
+		}	
+	}
+	return false; //in case of no change of state
 }
 
 inline bool button3_click(){
@@ -73,6 +98,14 @@ inline unsigned int strlen(char* s){
 	return i;
 }
 
+void display_points(){
+	char str_points[12];
+	uint64_t norm_points = game_points / (difficulty*2);	// /6 points for HARD, /4 for MEDIUM, /2 for easy
+	GLCD_SetTextColor(Red);			
+	GLCD_SetBackColor(Black);
+	sprintf(str_points, "%lu",(unsigned long) norm_points);
+	GLCD_DisplayString(0,SCREEN_HEIGHT-CHAR1_WIDTH*strlen(str_points),1,(unsigned char*)str_points,PIXELS);
+}
 struct Button{
 	const char* name;
 	unsigned int x;
@@ -119,51 +152,19 @@ struct Button{
 /*************************Method to reset the whole system...regiser taken from the lpc datasheet*************************/
 void system_reset(){
 	SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and sets SYSRESETREQ to 1
-	for(;;);																																	//waits until the system has been reset
-}
-
-bool button1_click_new(){
-	static uint32_t state = 0;
-	uint32_t  new_state = Button_GetState(0);
-	if (state != new_state){
-		if (new_state == 1){ //button clicked
-			state = new_state;
-			return true;
-		}
-		else{  		//unclick of the button
-			state = new_state;
-			return false;
-		}	
-	}
-	return false; //in case of no change of state
-}
-
-bool button2_click_new(){
-	static uint32_t state = 0;
-	uint32_t  new_state = Button_GetState(1);
-	if (state != new_state){
-		if (new_state == 1){ //button clicked
-			state = new_state;
-			return true;
-		}
-		else{  		//unclick of the button
-			state = new_state;
-			return false;
-		}	
-	}
-	return false; //in case of no change of state
 }
 
 /*************************Initialization of the game*************************/
 void GameInitialization(){
+	game_points = 0;
 	total_hits = 0;
-	int8_t difficulty = -1;
+	difficulty = -1;
 	GLCD_Clear(Black);				//LCD black while waiting for the difficulty
 	#ifdef DEBUG					//debug mode
-	difficulty = 4;
+	difficulty = AUTO;
 	#endif
 	if (pad.self) 					//if not a cold start, but playing in auto-mode, don't ask the diffic
-		difficulty = 4;
+		difficulty = AUTO;
 	Button* arr[3];
 	Button b0("    EASY    ",-1,180);		
 	Button b1("   MEDIUM   ",-1,140);
@@ -175,12 +176,12 @@ void GameInitialization(){
 	b0.draw(); b1.draw(); b2.draw();		//draw all the buttons
 	while(difficulty == -1){			//difficulty not selected. As soon as it is selected, the game starts
 		delay(10);
-		if(button1_click_new()){			//UP
+		if(button1_click()){			//UP
 			arr[selected]->select(false);
 			arr[selected]->draw();
 			selected--;
 		}
-		else if (button2_click_new()){		//DOWN
+		else if (button2_click()){		//DOWN
 			arr[selected]->select(false);
 			arr[selected]->draw();
 			selected++;
@@ -189,7 +190,7 @@ void GameInitialization(){
 			difficulty = selected+1;	//difficulty from 1 to 3
 		}
 		else if (allButtons_click()){		//all buttons for automatic mode
-			difficulty = 4;
+			difficulty = AUTO;
 		}
 		if (selected < 0)
 			selected = 0;
@@ -198,18 +199,16 @@ void GameInitialization(){
 		arr[selected]->select(true);
 		arr[selected]->draw();
 	}
-		//else if (allButtons_click())		
-		//	difficulty = 4;
 	
 	GLCD_Clear(Black);
 	pad.init(difficulty);								//set the size of the paddle
-	pad.draw();										//draw the paddle
+	pad.draw();										//LEAVE IT HERE
 	ball.init(POSITION_TO_CENTRE_BALL,BEGINNING_OF_FALLING_BALL);	//set the position of the ball
 	
 	int64_t i=1;						//to leave 1 pixel from the border of the screen				
 	int32_t j=0;						//brick line index
 	int32_t s=0;						//array index
-	while(i*j <= END_OF_LINES){			//loop for the creation and the representation of the 70 bricks
+	while(i*j <= END_OF_LINES){				//loop for the creation and the representation of the 70 bricks
 		bricks_array[s].set(i,BRICK_LINE_HEIGHT_BEGINNING-10*j); 
 		bricks_array[s].draw();
 		i += 24;													
@@ -244,22 +243,32 @@ void game(void const *argument){
 				total_hits++;
 			}
 		}
-		uint32_t direction_left = Button_GetState(0);			//checks if the paddle goes left
-		uint32_t direction_right = Button_GetState(1);			//checks if the paddle goes right
-		pad.move(direction_left,direction_right, ball.x);		//to make the paddle move in the directon wanted
+		uint32_t dir_left = Button_GetState(0);			//checks if the paddle goes left
+		uint32_t dir_right = Button_GetState(1);			//checks if the paddle goes right
+		pad.move(dir_left,dir_right, ball.x);			//move it	
 		
 		//check win or loss
-		if (ball.y <= 0){ 						//bottom of the screen...YOU LOST
+		if (ball.y <= 0){ 						//bottom of the screen...YOU LOSE
+			GLCD_SetTextColor(Yellow);			
+			GLCD_SetBackColor(Black);
+			const char* str = "YOU LOSE!";
+			GLCD_DisplayString(120,50,1,(unsigned char*)str,PIXELS);
 			play_music(LOSS,LOSS_DURATION);			//sad music
 			system_reset();						//reset of the system writing in the appropriate register
 		}
-		else if(total_hits == 70){ 					//no more bricks...YOU WON
+		else if(total_hits == 70){ 					//no more bricks...YOU WIN
+			GLCD_SetTextColor(Blue);			
+			GLCD_SetBackColor(Black);
+			const char* str = "YOU WIN!";
+			GLCD_DisplayString(120,60,1,(unsigned char*)str,PIXELS);
 			play_music(WIN,WIN_DURATION);				//happy music
 			if (pad.self)						//if auto mode		
-				GameInitialization();				//restart game
+				GameInitialization();					//restart game
 			else
 				system_reset();					//reset of the system writing in the appropriate register
 		}
+		
+		game_points++;							//increase points of the game
 		osMutexRelease(game_mutex_id);
 		osDelay(GAME_DELAY);																							
 	}
@@ -270,11 +279,12 @@ void game(void const *argument){
 void refresh_screen(void const *argument){					
 	for(;;){
 		osMutexWait(game_mutex_id,0);
+		display_points();					//display points
 		ball.draw();					//displays the ball
 		pad.draw();						//displays the paddle
 		int i;
-		for(i=0; i<70; i++)	 	//displays the bricks (if modified)
-			bricks_array[i].draw();
+		for(i=0; i<70; i++)	 			//displays the bricks (if modified)
+			bricks_array[i].draw();				
 		osMutexRelease(game_mutex_id);
 		osDelay(SCREEN_DELAY);
 	}
