@@ -170,9 +170,9 @@ struct Brick{
 	}
 	
 	//default constructor 
-	Brick() {hit = true; drawn = true; x = 0; y = 0;} //set drawn and hit, otherwise unexpected behaviour could occour (drawing or hitting it)
+	Brick() {/*hit = true; drawn = true; x = 0; y = 0*/;} //set drawn and hit, otherwise unexpected behaviour could occour (drawing or hitting it)
 	
-/*************************Method to set Bricks after cration*************************/	
+	/*************************Method to set Bricks after cration*************************/	
 	void set(uint16_t x, int16_t y){
 		this->x = x;
 		this->y = y;
@@ -216,18 +216,18 @@ struct Brick{
 };
 
 struct Ball{
-	double x;											
-	double y;
-	double old_x;
-	double old_y;
-	double speed_x;
-	double speed_y;
+	float x;											
+	float y;
+	float old_x;
+	float old_y;
+	float speed_x;
+	float speed_y;
 	
 	//constructor
 	Ball(){;}
 		
 	/*************************Method to initialize the ball*******************/
-	void init(double x, double y){
+	void init(float x, float y){
 		this->x = x;
 		this->y = y;
 		speed_x = 0.5;
@@ -277,11 +277,10 @@ struct Ball{
 		
 		//check if hits the paddle
 		else if (ball_bottom <= PADDLE_WIDTH+PADDLE_Y	&& ( ball_right>=p.x && ball_left<=(p.x+p.length))){
-			y = PADDLE_WIDTH+PADDLE_Y; 											//put the ball again on top of the paddle
-			
+			y = PADDLE_WIDTH+PADDLE_Y; 											//put the ball again on top of the paddle			
 			//computes the angles of the paddle
-			double left_angle = p.x + p.length * PADDLE_ANGLE;																	
-			double right_angle = p.x + p.length * (1-PADDLE_ANGLE);
+			float left_angle = p.x + p.length * PADDLE_ANGLE;																	
+			float right_angle = p.x + p.length * (1-PADDLE_ANGLE);
 			
 			//if the paddle goes in the opposit direction of the ball...
 			if((p.going_left==true && speed_x<0) || (p.going_right==true && speed_x>0))
@@ -309,8 +308,8 @@ struct Ball{
 	bool check_collision(Brick& brick){
 		bool is = false;																											//by default...nobody has hit anything
 		if(!brick.hit){
-			double ball_center_x = x + BALL_DIAMETER/2.0;												
-			double ball_center_y = y + BALL_DIAMETER/2.0;
+			float ball_center_x = x + BALL_DIAMETER/2.0;												
+			float ball_center_y = y + BALL_DIAMETER/2.0;
 			
 			uint8_t going_up = 0;
 			uint8_t going_dw = 0;
@@ -384,15 +383,15 @@ struct Ball{
 	}
 		
 	private:
-		double x_drawn;
-		double y_drawn;
-		double ball_top;
-		double ball_bottom;													
-		double ball_right;
-		double ball_left;
+		float x_drawn;
+		float y_drawn;
+		float ball_top;
+		float ball_bottom;													
+		float ball_right;
+		float ball_left;
 		
 		//checks if (x,y) is inside a brick
-		bool is_inside(double x, double y, const Brick& brick){
+		bool is_inside(float x, float y, const Brick& brick){
 			if (x >= brick.x && x <= brick.x+BRICK_LENGTH)
 				if (y >= brick.y && y < brick.y+BRICK_WIDTH)
 					return true;

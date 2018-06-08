@@ -38,12 +38,13 @@ osMutexId game_mutex_id; 				// Mutex ID
 Paddle pad;
 Ball ball;
 Brick bricks_array[70];
+
 int8_t difficulty;
 uint16_t total_hits; 					//shows total number of bricks hit
 uint64_t game_points;					//points of the game
-bool init=false;
+
 /*************************Methods used to check the click of a button*************************/
-bool button1_click(){
+inline bool button1_click(){
 	static uint32_t state = 0;
 	uint32_t  new_state = Button_GetState(0);
 	if (state != new_state){
@@ -59,7 +60,7 @@ bool button1_click(){
 	return false; //in case of no change of state
 }
 
-bool button2_click(){
+inline bool button2_click(){
 	static uint32_t state = 0;
 	uint32_t  new_state = Button_GetState(1);
 	if (state != new_state){
@@ -98,12 +99,11 @@ inline unsigned int strlen(char* s){
 	return i;
 }
 
-void display_points(){
+inline void display_points(){
 	char str_points[12];
-	uint64_t norm_points = game_points / (difficulty*2);	// /6 points for HARD, /4 for MEDIUM, /2 for easy
 	GLCD_SetTextColor(Red);			
 	GLCD_SetBackColor(Black);
-	sprintf(str_points, "%lu",(unsigned long) norm_points);
+	sprintf(str_points, "%lu",(unsigned long) game_points / (difficulty*2)); // /6 points for HARD, /4 for MEDIUM, /2 for easy
 	GLCD_DisplayString(0,SCREEN_HEIGHT-CHAR1_WIDTH*strlen(str_points),1,(unsigned char*)str_points,PIXELS);
 }
 struct Button{
@@ -154,8 +154,47 @@ void system_reset(){
 	SCB->AIRCR = (0x5FA<<SCB_AIRCR_VECTKEY_Pos)|SCB_AIRCR_SYSRESETREQ_Msk;		//writes 0x5FA in VECTKEY field [31:16] and sets SYSRESETREQ to 1
 }
 
+void Explosion(uint16_t y, uint16_t x, uint16_t dim){				
+	for(int d=1; d<=3; d++){
+		GLCD_DrawRect(x-dim*d,y-dim*d,dim,dim,White);
+		GLCD_DrawRect(x-dim*d,y+dim*(d-1),dim,dim,White);
+		GLCD_DrawRect(x+dim*(d-1),y-dim*d,dim,dim,White);
+		GLCD_DrawRect(x+dim*(d-1),y+dim*(d-1),dim,dim,White);
+		delay(3);
+		GLCD_DrawRect(x-dim*d,y-dim*d,dim,dim,Black);
+		GLCD_DrawRect(x-dim*d,y+dim*(d-1),dim,dim,Black);
+		GLCD_DrawRect(x+dim*(d-1),y-dim*d,dim,dim,Black);
+		GLCD_DrawRect(x+dim*(d-1),y+dim*(d-1),dim,dim,Black);
+	}
+}
+
+void introduction(){
+	uint16_t i = 228;
+	uint16_t j = 170;
+	GLCD_DrawRect((SCREEN_WIDTH-20)/3,(SCREEN_HEIGHT-60)/2, 20, 60, Yellow);
+	while(j>=62){
+		GLCD_DrawRect(i,j,8,8,Red);
+		delay(2);
+		GLCD_DrawRect(i,j,8,8,Black);
+		j--;
+		if(j>=116){
+			i=i-2;
+		}else{
+			i=i+2;
+		}
+	}
+	GLCD_Clear(Black);
+	Explosion(j,i,3);
+	GLCD_DisplayString(SCREEN_WIDTH-200,(SCREEN_HEIGHT-13*CHAR1_WIDTH)/2,1,(unsigned char*)"BREAKOUT GAME",PIXELS);
+	GLCD_DisplayString(SCREEN_WIDTH-100,(SCREEN_HEIGHT-12*CHAR0_HEIGHT)/2,0,(unsigned char*)"Developed by",PIXELS);
+	GLCD_DisplayString(SCREEN_WIDTH-CHAR0_HEIGHT,0,0,(unsigned char*)"Andrea Gulberti",PIXELS);
+	GLCD_DisplayString(SCREEN_WIDTH-CHAR0_HEIGHT,SCREEN_HEIGHT-11*CHAR0_HEIGHT,0,(unsigned char*)"Simone Fini",PIXELS);
+	delay(500);
+	GLCD_Clear(Black);
+}
+
 /*************************Initialization of the game*************************/
-void GameInitialization(){
+ void GameInitialization(){
 	game_points = 0;
 	total_hits = 0;
 	difficulty = -1;
@@ -165,6 +204,7 @@ void GameInitialization(){
 	#endif
 	if (pad.self) 					//if not a cold start, but playing in auto-mode, don't ask the diffic
 		difficulty = AUTO;
+	introduction();
 	Button* arr[3];
 	Button b0("    EASY    ",-1,180);		
 	Button b1("   MEDIUM   ",-1,140);
@@ -231,7 +271,7 @@ void GameInitialization(){
 }
 
 /*************************Method for the execution of the game. It's attached to the tid_game thread*************************/
-void game(void const *argument){										
+void game(void const *argument){		
 	for(;;){
 		osMutexWait(game_mutex_id,0);
 		ball.move(pad);
@@ -243,6 +283,7 @@ void game(void const *argument){
 				total_hits++;
 			}
 		}
+
 		uint32_t dir_left = Button_GetState(0);			//checks if the paddle goes left
 		uint32_t dir_right = Button_GetState(1);			//checks if the paddle goes right
 		pad.move(dir_left,dir_right, ball.x);			//move it	
@@ -261,9 +302,9 @@ void game(void const *argument){
 			GLCD_SetBackColor(Black);
 			const char* str = "YOU WIN!";
 			GLCD_DisplayString(120,60,1,(unsigned char*)str,PIXELS);
-			play_music(WIN,WIN_DURATION);				//happy music
+			play_music(WIN,WIN_DURATION);				//happy music	
 			if (pad.self)						//if auto mode		
-				GameInitialization();					//restart game
+				GameInitialization();				//restart game
 			else
 				system_reset();					//reset of the system writing in the appropriate register
 		}
@@ -280,11 +321,12 @@ void refresh_screen(void const *argument){
 	for(;;){
 		osMutexWait(game_mutex_id,0);
 		display_points();					//display points
+		if(total_hits<70)
 		ball.draw();					//displays the ball
 		pad.draw();						//displays the paddle
 		int i;
 		for(i=0; i<70; i++)	 			//displays the bricks (if modified)
-			bricks_array[i].draw();				
+			bricks_array[i].draw();			
 		osMutexRelease(game_mutex_id);
 		osDelay(SCREEN_DELAY);
 	}

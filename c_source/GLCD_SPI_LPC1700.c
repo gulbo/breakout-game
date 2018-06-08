@@ -691,11 +691,12 @@ void GLCD_DrawChar_U8 (unsigned int x, unsigned int y, unsigned int cw, unsigned
 		for (i = cw-1; i >= 0; i--) {
 #endif
 			if((c[j] & (1 << i)) == 0x00)
-				wr_dat_only(BackColor);		
-			else					
 				wr_dat_only(TextColor);		
+			else					
+				wr_dat_only(BackColor);		
 		}
 	}
+	
   wr_dat_stop();
 }
 
