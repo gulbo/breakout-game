@@ -1,5 +1,5 @@
 # breakout-game
-The famous Breakout game implemented on a NXP LPC1768 ARM development board.
+The famous Breakout game implemented on a NXP LPC1768 ARM development board with CMSIS-RTOS RTX real-time operating system. This version of RTX implements the CMSIS-RTOS API, which is a generic RTOS interface for Cortex-M processor-based devices. The CMSIS-RTOS API provides a standardized interface for software components that require RTOS functionality.
 
 This work has been commissioned to us as a special project, during the Computer Architectures course at Politecnico di Torino, academic year 2017/2018.
 
